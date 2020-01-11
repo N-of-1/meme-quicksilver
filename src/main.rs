@@ -2,21 +2,35 @@
 extern crate quicksilver;
 
 use quicksilver::{
-    geom::{Circle, Line, Rectangle, Transform, Triangle, Vector},
-    graphics::{Background::Col, Color},
-    lifecycle::{run, Settings, State, Window},
-    Result,
+    combinators::result,
+    geom::{Circle, Line, Rectangle, Shape, Transform, Triangle, Vector},
+    graphics::{Background::Col, Background::Img, Color, Font, FontStyle, Image},
+    lifecycle::{run, Asset, Settings, State, Window},
+    Future, Result,
 };
 
-struct DrawGeometry;
+struct DrawGeometry {
+    asset: Asset<Image>,
+}
 
 impl State for DrawGeometry {
     fn new() -> Result<DrawGeometry> {
-        Ok(DrawGeometry)
+        let asset = Asset::new(Font::load("WorkSans-ExtraBold.ttf").and_then(|font| {
+            let style = FontStyle::new(72.0, Color::BLACK);
+            result(font.render("Sample Text", &style))
+        }));
+
+        Ok(DrawGeometry { asset })
     }
 
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         window.clear(Color::WHITE)?;
+
+        self.asset.execute(|image| {
+            window.draw(&image.area().with_center((400, 300)), Img(&image));
+            Ok(())
+        })?;
+
         window.draw(&Rectangle::new((100, 100), (32, 32)), Col(Color::BLUE));
         window.draw_ex(
             &Rectangle::new((400, 300), (32, 32)),
