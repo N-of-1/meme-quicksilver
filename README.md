@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="res/nof1-logo.png">
+  <img src="images/nof1-logo.png">
 </p>
 
 # meme_quicksilver
