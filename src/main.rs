@@ -10,23 +10,31 @@ use quicksilver::{
 };
 
 struct DrawGeometry {
-    asset: Asset<Image>,
+    extra_bold: Asset<Image>,
+    logo: Asset<Image>,
 }
 
 impl State for DrawGeometry {
     fn new() -> Result<DrawGeometry> {
-        let asset = Asset::new(Font::load("WorkSans-ExtraBold.ttf").and_then(|font| {
+        let extra_bold = Asset::new(Font::load("WorkSans-ExtraBold.ttf").and_then(|font| {
             let style = FontStyle::new(72.0, Color::BLACK);
             result(font.render("Sample Text", &style))
         }));
 
-        Ok(DrawGeometry { asset })
+        let logo = Asset::new(Image::load("nof1-logo.png"));
+
+        Ok(DrawGeometry { extra_bold, logo })
     }
 
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         window.clear(Color::WHITE)?;
 
-        self.asset.execute(|image| {
+        self.logo.execute(|image| {
+            window.draw(&image.area().with_center((400, 300)), Img(&image));
+            Ok(())
+        })?;
+
+        self.extra_bold.execute(|image| {
             window.draw(&image.area().with_center((400, 300)), Img(&image));
             Ok(())
         })?;
@@ -58,7 +66,7 @@ impl State for DrawGeometry {
 fn main() {
     use quicksilver::graphics::*;
 
-    let settings = Settings {
+    /*    let settings = Settings {
         show_cursor: true,
         min_size: None,
         max_size: None,
@@ -71,6 +79,11 @@ fn main() {
         icon_path: None,
         vsync: true,
         multisampling: None,
+    };*/
+
+    let settings = Settings {
+        icon_path: Some("n-icon.png"),
+        ..Settings::default()
     };
 
     run::<DrawGeometry>("Draw Geometry", Vector::new(800, 600), settings);
