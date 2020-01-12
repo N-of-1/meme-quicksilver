@@ -4,7 +4,7 @@ extern crate quicksilver;
 use quicksilver::{
     combinators::result,
     geom::{Circle, Line, Rectangle, Shape, Transform, Triangle, Vector},
-    graphics::{Background::Col, Background::Img, Color, Font, FontStyle, Image},
+    graphics::{Background::Col, Background::Img, Color, Font, FontStyle, Image, ResizeStrategy},
     lifecycle::{run, Asset, Settings, State, Window},
     Future, Result,
 };
@@ -18,7 +18,7 @@ impl State for DrawGeometry {
     fn new() -> Result<DrawGeometry> {
         let extra_bold = Asset::new(Font::load("WorkSans-ExtraBold.ttf").and_then(|font| {
             let style = FontStyle::new(72.0, Color::BLACK);
-            result(font.render("Sample Text", &style))
+            result(font.render("Meme Machine", &style))
         }));
 
         // let logo = Asset::new(Image::load("nof1-logo.png"));
@@ -86,8 +86,10 @@ fn main() {
 
     let settings = Settings {
         icon_path: Some("n-icon.png"),
+        fullscreen: true,
+        resize: ResizeStrategy::Maintain,
         ..Settings::default()
     };
 
-    run::<DrawGeometry>("Draw Geometry", Vector::new(800, 600), settings);
+    run::<DrawGeometry>("Draw Geometry", Vector::new(1280, 768), settings);
 }
