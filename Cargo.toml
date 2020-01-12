@@ -8,3 +8,6 @@ edition = "2018"
 
 [dependencies]
 quicksilver="0.3"
+
+[profile.release]
+opt-level = 'z'
