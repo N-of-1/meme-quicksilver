@@ -10,21 +10,21 @@ use quicksilver::{
 };
 
 struct DrawGeometry {
-    // extra_bold: Asset<Image>,
+    extra_bold: Asset<Image>,
     // logo: Asset<Image>,
 }
 
 impl State for DrawGeometry {
     fn new() -> Result<DrawGeometry> {
-        // let extra_bold = Asset::new(Font::load("WorkSans-ExtraBold.ttf").and_then(|font| {
-        //     let style = FontStyle::new(72.0, Color::BLACK);
-        //     result(font.render("Sample Text", &style))
-        // }));
+        let extra_bold = Asset::new(Font::load("WorkSans-ExtraBold.ttf").and_then(|font| {
+            let style = FontStyle::new(72.0, Color::BLACK);
+            result(font.render("Sample Text", &style))
+        }));
 
         // let logo = Asset::new(Image::load("nof1-logo.png"));
 
         Ok(DrawGeometry {
-            /*extra_bold,*/ 
+            extra_bold,
             //logo,
         })
     }
@@ -37,10 +37,10 @@ impl State for DrawGeometry {
         //     Ok(())
         // })?;
 
-        // self.extra_bold.execute(|image| {
-        //     window.draw(&image.area().with_center((400, 300)), Img(&image));
-        //     Ok(())
-        // })?;
+        self.extra_bold.execute(|image| {
+            window.draw(&image.area().with_center((400, 300)), Img(&image));
+            Ok(())
+        })?;
 
         window.draw(&Rectangle::new((100, 100), (32, 32)), Col(Color::BLUE));
         window.draw_ex(
@@ -85,7 +85,7 @@ fn main() {
     };*/
 
     let settings = Settings {
-        // icon_path: Some("n-icon.png"),
+        icon_path: Some("n-icon.png"),
         ..Settings::default()
     };
 
