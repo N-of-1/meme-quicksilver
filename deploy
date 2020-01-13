@@ -1,5 +1,6 @@
 # Deploy the web build locally on MacOS
-cargo web deploy --release
+# cargo web build
+cargo web deploy
 rm ~/Sites/*
 cp ./target/deploy/* ~/Sites
 open "http://localhost"

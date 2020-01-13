@@ -11,7 +11,7 @@ use quicksilver::{
 
 struct DrawGeometry {
     extra_bold: Asset<Image>,
-    // logo: Asset<Image>,
+    logo: Asset<Image>,
 }
 
 impl State for DrawGeometry {
@@ -21,28 +21,25 @@ impl State for DrawGeometry {
             result(font.render("Meme Machine", &style))
         }));
 
-        // let logo = Asset::new(Image::load("nof1-logo.png"));
+        let logo = Asset::new(Image::load("nof1-logo.png"));
 
-        Ok(DrawGeometry {
-            extra_bold,
-            //logo,
-        })
+        Ok(DrawGeometry { extra_bold, logo })
     }
 
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         window.clear(Color::WHITE)?;
 
-        // self.logo.execute(|image| {
-        //     window.draw(&image.area().with_center((400, 300)), Img(&image));
-        //     Ok(())
-        // })?;
+        self.logo.execute(|image| {
+            window.draw(&image.area().with_center((400, 150)), Img(&image));
+            Ok(())
+        })?;
 
         self.extra_bold.execute(|image| {
             window.draw(&image.area().with_center((400, 300)), Img(&image));
             Ok(())
         })?;
 
-        window.draw(&Rectangle::new((100, 100), (32, 32)), Col(Color::BLUE));
+        /*        window.draw(&Rectangle::new((100, 100), (32, 32)), Col(Color::BLUE));
         window.draw_ex(
             &Rectangle::new((400, 300), (32, 32)),
             Col(Color::BLUE),
@@ -61,7 +58,7 @@ impl State for DrawGeometry {
             Col(Color::RED),
             Transform::rotate(45) * Transform::scale((0.5, 0.5)),
             0,
-        );
+        );*/
         Ok(())
     }
 }
