@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image-fix-test"}
 # quicksilver="0.3"
-image = "0.21"
 
 [profile.release]
-# opt-level = 'z'
+opt-level = 'z'
+lto = true

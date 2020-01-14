@@ -5,17 +5,26 @@ use quicksilver::{
     combinators::result,
     geom::{Circle, Line, Rectangle, Shape, Transform, Triangle, Vector},
     graphics::{Background::Col, Background::Img, Color, Font, FontStyle, Image, ResizeStrategy},
-    lifecycle::{run, Asset, Settings, State, Window},
+    input::{ButtonState, GamepadButton, Key, MouseButton},
+    lifecycle::{run, Asset, Event, Settings, State, Window},
     Future, Result,
 };
 
-struct DrawGeometry {
+struct DrawState {
     extra_bold: Asset<Image>,
     logo: Asset<Image>,
 }
 
-impl State for DrawGeometry {
-    fn new() -> Result<DrawGeometry> {
+impl DrawState {
+    // Perform any shutdown actions like closing the datbase if the user or OS clos
+    // Do not call this directly to end the app. Instead call window.close();
+    fn shutdown_hooks() {
+        // Perform any shutdown actions like closing the datbase if the user or OS clos
+    }
+}
+
+impl State for DrawState {
+    fn new() -> Result<DrawState> {
         let extra_bold = Asset::new(Font::load("WorkSans-ExtraBold.ttf").and_then(|font| {
             let style = FontStyle::new(72.0, Color::BLACK);
             result(font.render("Meme Machine", &style))
@@ -23,9 +32,62 @@ impl State for DrawGeometry {
 
         let logo = Asset::new(Image::load("nof1-logo.png"));
 
-        Ok(DrawGeometry { extra_bold, logo })
+        Ok(DrawState { extra_bold, logo })
     }
 
+    // This is called 60 times per second
+    fn update(&mut self, window: &mut Window) -> Result<()> {
+        // EXIT APP
+        if window.keyboard()[Key::Escape].is_down()
+            || window
+                .gamepads()
+                .iter()
+                .any(|pad| pad[GamepadButton::FaceLeft].is_down())
+        {
+            window.close();
+        }
+
+        // LEFT ACTION
+        if window.keyboard()[Key::LShift] == ButtonState::Pressed
+            || window.mouse()[MouseButton::Right].is_down()
+            || window
+                .gamepads()
+                .iter()
+                .any(|pad| pad[GamepadButton::TriggerLeft].is_down())
+            || window
+                .gamepads()
+                .iter()
+                .any(|pad| pad[GamepadButton::ShoulderLeft].is_down())
+        {
+            // TODO Left press
+        }
+
+        // RIGHT ACTION
+        if window.keyboard()[Key::RShift] == ButtonState::Pressed
+            || window.mouse()[MouseButton::Right].is_down()
+            || window
+                .gamepads()
+                .iter()
+                .any(|pad| pad[GamepadButton::TriggerRight].is_down())
+            || window
+                .gamepads()
+                .iter()
+                .any(|pad| pad[GamepadButton::ShoulderRight].is_down())
+        {
+            // TODO Right press
+        }
+
+        Ok(())
+    }
+
+    fn event(&mut self, event: &Event, window: &mut Window) -> Result<()> {
+        if let Event::Closed = event {
+            // TODO self.shutdown_hooks();
+        }
+        Ok(())
+    }
+
+    // This is called 30 times per second
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         window.clear(Color::WHITE)?;
 
@@ -85,8 +147,9 @@ fn main() {
         icon_path: Some("n-icon.png"),
         fullscreen: true,
         resize: ResizeStrategy::Maintain,
+        draw_rate: 35.0, // Max 30fps
         ..Settings::default()
     };
 
-    run::<DrawGeometry>("Draw Geometry", Vector::new(1280, 768), settings);
+    run::<DrawState>("Meme Machine", Vector::new(1280, 768), settings);
 }

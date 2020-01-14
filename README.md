@@ -10,3 +10,8 @@ master
 
 UI for meme machine demo using the quicksilver gaming library
 
+To setup for web builds, install Apache locally and fix the WASM MIME type, then:
+`
+cargo install cargo-web
+./deploy
+`
