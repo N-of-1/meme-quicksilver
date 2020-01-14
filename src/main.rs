@@ -10,6 +10,14 @@ use quicksilver::{
     Future, Result,
 };
 
+const COLOR_GREY: Color = Color {
+    r: 0.5,
+    g: 0.5,
+    b: 0.5,
+    a: 1.0,
+};
+const COLOR_BACKGROUND: Color = COLOR_GREY;
+
 struct DrawState {
     extra_bold: Asset<Image>,
     logo: Asset<Image>,
@@ -26,7 +34,7 @@ impl DrawState {
 impl State for DrawState {
     fn new() -> Result<DrawState> {
         let extra_bold = Asset::new(Font::load("WorkSans-ExtraBold.ttf").and_then(|font| {
-            let style = FontStyle::new(72.0, Color::BLACK);
+            let style = FontStyle::new(72.0, COLOR_BACKGROUND);
             result(font.render("Meme Machine", &style))
         }));
 
@@ -89,7 +97,7 @@ impl State for DrawState {
 
     // This is called 30 times per second
     fn draw(&mut self, window: &mut Window) -> Result<()> {
-        window.clear(Color::WHITE)?;
+        window.clear(COLOR_BACKGROUND)?;
 
         self.logo.execute(|image| {
             window.draw(&image.area().with_center((400, 150)), Img(&image));
@@ -147,7 +155,7 @@ fn main() {
         icon_path: Some("n-icon.png"),
         fullscreen: true,
         resize: ResizeStrategy::Maintain,
-        draw_rate: 35.0, // Max 30fps
+        draw_rate: 35.0, // 35ms ~= max 30fps
         ..Settings::default()
     };
 
