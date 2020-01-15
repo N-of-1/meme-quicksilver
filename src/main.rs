@@ -7,6 +7,7 @@ use quicksilver::{
     graphics::{Background::Col, Background::Img, Color, Font, FontStyle, Image, ResizeStrategy},
     input::{ButtonState, GamepadButton, Key, MouseButton},
     lifecycle::{run, Asset, Event, Settings, State, Window},
+    sound::Sound,
     Future, Result,
 };
 
@@ -18,9 +19,15 @@ const COLOR_GREY: Color = Color {
 };
 const COLOR_BACKGROUND: Color = COLOR_GREY;
 
+const BUTTON_AREA: Rectangle = Rectangle {
+    pos: Vector { x: 350.0, y: 250.0 },
+    size: Vector { x: 100.0, y: 100.0 },
+};
+
 struct DrawState {
     extra_bold: Asset<Image>,
     logo: Asset<Image>,
+    button_sound: Asset<Sound>,
 }
 
 impl DrawState {
@@ -40,7 +47,13 @@ impl State for DrawState {
 
         let logo = Asset::new(Image::load("nof1-logo.png"));
 
-        Ok(DrawState { extra_bold, logo })
+        let button_sound = Asset::new(Sound::load("boop.ogg"));
+
+        Ok(DrawState {
+            extra_bold: extra_bold,
+            logo: logo,
+            button_sound: button_sound,
+        })
     }
 
     // This is called 60 times per second
@@ -85,10 +98,22 @@ impl State for DrawState {
             // TODO Right press
         }
 
+        // BUTTON PRESS
+        self.button_sound
+            .execute(|sound| {
+                if window.mouse()[MouseButton::Left] == ButtonState::Pressed
+                    && BUTTON_AREA.contains(window.mouse().pos())
+                {
+                    sound.play()?;
+                }
+                Ok(())
+            })
+            .expect("Could not play button sound");
+
         Ok(())
     }
 
-    fn event(&mut self, event: &Event, window: &mut Window) -> Result<()> {
+    fn event(&mut self, event: &Event, _window: &mut Window) -> Result<()> {
         if let Event::Closed = event {
             // TODO self.shutdown_hooks();
         }
@@ -99,13 +124,21 @@ impl State for DrawState {
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         window.clear(COLOR_BACKGROUND)?;
 
+        // LOGO
         self.logo.execute(|image| {
             window.draw(&image.area().with_center((400, 150)), Img(&image));
             Ok(())
         })?;
 
+        // TITLE TEXT
         self.extra_bold.execute(|image| {
             window.draw(&image.area().with_center((400, 300)), Img(&image));
+            Ok(())
+        })?;
+
+        // BUTTON
+        self.button_sound.execute(|_| {
+            window.draw(&BUTTON_AREA, Col(Color::BLUE));
             Ok(())
         })?;
 
