@@ -7,9 +7,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image-fix-test"}
+quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="v3-gl3-i8u8-fix"}
+# quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image-fix-test"}
 # quicksilver="0.3"
 
 [profile.release]
 opt-level = 'z'
 lto = true
+
