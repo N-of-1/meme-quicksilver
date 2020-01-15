@@ -18,8 +18,11 @@ const COLOR_GREY: Color = Color {
     a: 1.0,
 };
 const COLOR_BACKGROUND: Color = COLOR_GREY;
+const COLOR_TEXT: Color = Color::BLACK;
+const COLOR_BUTTON: Color = Color::BLUE;
+const COLOR_BUTTON_PRESSED: Color = Color::WHITE;
 
-const BUTTON_AREA: Rectangle = Rectangle {
+const RIGHT_BUTTON_AREA: Rectangle = Rectangle {
     pos: Vector { x: 350.0, y: 250.0 },
     size: Vector { x: 100.0, y: 100.0 },
 };
@@ -28,6 +31,8 @@ struct DrawState {
     extra_bold: Asset<Image>,
     logo: Asset<Image>,
     button_sound: Asset<Sound>,
+    left_button_color: Color,
+    right_button_color: Color,
 }
 
 impl DrawState {
@@ -41,7 +46,7 @@ impl DrawState {
 impl State for DrawState {
     fn new() -> Result<DrawState> {
         let extra_bold = Asset::new(Font::load("WorkSans-ExtraBold.ttf").and_then(|font| {
-            let style = FontStyle::new(72.0, COLOR_BACKGROUND);
+            let style = FontStyle::new(72.0, COLOR_TEXT);
             result(font.render("Meme Machine", &style))
         }));
 
@@ -53,6 +58,8 @@ impl State for DrawState {
             extra_bold: extra_bold,
             logo: logo,
             button_sound: button_sound,
+            left_button_color: COLOR_BUTTON,
+            right_button_color: COLOR_BUTTON,
         })
     }
 
@@ -70,7 +77,6 @@ impl State for DrawState {
 
         // LEFT ACTION
         if window.keyboard()[Key::LShift] == ButtonState::Pressed
-            || window.mouse()[MouseButton::Right].is_down()
             || window
                 .gamepads()
                 .iter()
@@ -85,7 +91,6 @@ impl State for DrawState {
 
         // RIGHT ACTION
         if window.keyboard()[Key::RShift] == ButtonState::Pressed
-            || window.mouse()[MouseButton::Right].is_down()
             || window
                 .gamepads()
                 .iter()
@@ -98,17 +103,15 @@ impl State for DrawState {
             // TODO Right press
         }
 
-        // BUTTON PRESS
-        self.button_sound
-            .execute(|sound| {
-                if window.mouse()[MouseButton::Left] == ButtonState::Pressed
-                    && BUTTON_AREA.contains(window.mouse().pos())
-                {
-                    sound.play()?;
-                }
-                Ok(())
-            })
-            .expect("Could not play button sound");
+        // RIGHT BUTTON PRESS
+        if window.mouse()[MouseButton::Left] == ButtonState::Pressed
+            && RIGHT_BUTTON_AREA.contains(window.mouse().pos())
+        {
+            self.right_button_color = COLOR_BUTTON_PRESSED;
+            self.button_sound
+                .execute(|sound| sound.play())
+                .expect("Could not play right button sound");
+        }
 
         Ok(())
     }
@@ -136,11 +139,13 @@ impl State for DrawState {
             Ok(())
         })?;
 
-        // BUTTON
+        // RIGHT BUTTON
+        let right_color = self.right_button_color;
         self.button_sound.execute(|_| {
-            window.draw(&BUTTON_AREA, Col(Color::BLUE));
+            window.draw(&RIGHT_BUTTON_AREA, Col(right_color));
             Ok(())
         })?;
+        self.right_button_color = COLOR_BUTTON;
 
         /*        window.draw(&Rectangle::new((100, 100), (32, 32)), Col(Color::BLUE));
         window.draw_ex(
