@@ -22,9 +22,14 @@ const COLOR_TEXT: Color = Color::BLACK;
 const COLOR_BUTTON: Color = Color::BLUE;
 const COLOR_BUTTON_PRESSED: Color = Color::WHITE;
 
+const LEFT_BUTTON_AREA: Rectangle = Rectangle {
+    pos: Vector { x: 100.0, y: 350.0 },
+    size: Vector { x: 100.0, y: 50.0 },
+};
+
 const RIGHT_BUTTON_AREA: Rectangle = Rectangle {
-    pos: Vector { x: 350.0, y: 250.0 },
-    size: Vector { x: 100.0, y: 100.0 },
+    pos: Vector { x: 350.0, y: 350.0 },
+    size: Vector { x: 100.0, y: 50.0 },
 };
 
 struct DrawState {
@@ -86,7 +91,10 @@ impl State for DrawState {
                 .iter()
                 .any(|pad| pad[GamepadButton::ShoulderLeft].is_down())
         {
-            // TODO Left press
+            self.left_button_color = COLOR_BUTTON_PRESSED;
+            self.button_sound
+                .execute(|sound| sound.play())
+                .expect("Could not play left button sound");
         }
 
         // RIGHT ACTION
@@ -100,10 +108,23 @@ impl State for DrawState {
                 .iter()
                 .any(|pad| pad[GamepadButton::ShoulderRight].is_down())
         {
-            // TODO Right press
+            self.right_button_color = COLOR_BUTTON_PRESSED;
+            self.button_sound
+                .execute(|sound| sound.play())
+                .expect("Could not play right button sound");
         }
 
-        // RIGHT BUTTON PRESS
+        // LEFT SCREEN BUTTON PRESS
+        if window.mouse()[MouseButton::Left] == ButtonState::Pressed
+            && LEFT_BUTTON_AREA.contains(window.mouse().pos())
+        {
+            self.left_button_color = COLOR_BUTTON_PRESSED;
+            self.button_sound
+                .execute(|sound| sound.play())
+                .expect("Could not play left button sound");
+        }
+
+        // RIGHT SCREEN BUTTON PRESS
         if window.mouse()[MouseButton::Left] == ButtonState::Pressed
             && RIGHT_BUTTON_AREA.contains(window.mouse().pos())
         {
@@ -138,6 +159,14 @@ impl State for DrawState {
             window.draw(&image.area().with_center((400, 300)), Img(&image));
             Ok(())
         })?;
+
+        // LEFT BUTTON
+        let left_color = self.left_button_color;
+        self.button_sound.execute(|_| {
+            window.draw(&LEFT_BUTTON_AREA, Col(left_color));
+            Ok(())
+        })?;
+        self.left_button_color = COLOR_BUTTON;
 
         // RIGHT BUTTON
         let right_color = self.right_button_color;
