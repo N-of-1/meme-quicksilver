@@ -57,7 +57,7 @@ impl State for DrawState {
 
         let logo = Asset::new(Image::load("nof1-logo.png"));
 
-        let button_sound = Asset::new(Sound::load("boop.ogg"));
+        let button_sound = Asset::new(Sound::load("click.ogg"));
 
         Ok(DrawState {
             extra_bold: extra_bold,
