@@ -11,6 +11,8 @@ use quicksilver::{
     Future, Result,
 };
 
+const ENV_SCREEN_SIZE: &str = "SCREEN_SIZE";
+const STR_TITLE: &str = "Meme Machine";
 const COLOR_GREY: Color = Color {
     r: 0.5,
     g: 0.5,
@@ -33,9 +35,12 @@ const RIGHT_BUTTON_AREA: Rectangle = Rectangle {
 };
 
 struct DrawState {
+    frame_count: u64,
     extra_bold: Asset<Image>,
     logo: Asset<Image>,
-    button_sound: Asset<Sound>,
+    click_sound: Asset<Sound>,
+    blah_sound: Asset<Sound>,
+    welcome_sound: Asset<Sound>,
     left_button_color: Color,
     right_button_color: Color,
 }
@@ -52,17 +57,24 @@ impl State for DrawState {
     fn new() -> Result<DrawState> {
         let extra_bold = Asset::new(Font::load("WorkSans-ExtraBold.ttf").and_then(|font| {
             let style = FontStyle::new(72.0, COLOR_TEXT);
-            result(font.render("Meme Machine", &style))
+            result(font.render(STR_TITLE, &style))
         }));
 
         let logo = Asset::new(Image::load("nof1-logo.png"));
 
-        let button_sound = Asset::new(Sound::load("click.ogg"));
+        let click_sound = Asset::new(Sound::load("click.ogg"));
+
+        let blah_sound = Asset::new(Sound::load("blah.ogg"));
+
+        let welcome_sound = Asset::new(Sound::load("moog.ogg"));
 
         Ok(DrawState {
+            frame_count: 0,
             extra_bold: extra_bold,
             logo: logo,
-            button_sound: button_sound,
+            click_sound: click_sound,
+            blah_sound: blah_sound,
+            welcome_sound: welcome_sound,
             left_button_color: COLOR_BUTTON,
             right_button_color: COLOR_BUTTON,
         })
@@ -92,7 +104,10 @@ impl State for DrawState {
                 .any(|pad| pad[GamepadButton::ShoulderLeft].is_down())
         {
             self.left_button_color = COLOR_BUTTON_PRESSED;
-            self.button_sound
+            self.click_sound
+                .execute(|sound| sound.play())
+                .expect("Could not play left button sound");
+            self.blah_sound
                 .execute(|sound| sound.play())
                 .expect("Could not play left button sound");
         }
@@ -109,7 +124,7 @@ impl State for DrawState {
                 .any(|pad| pad[GamepadButton::ShoulderRight].is_down())
         {
             self.right_button_color = COLOR_BUTTON_PRESSED;
-            self.button_sound
+            self.click_sound
                 .execute(|sound| sound.play())
                 .expect("Could not play right button sound");
         }
@@ -119,7 +134,10 @@ impl State for DrawState {
             && LEFT_BUTTON_AREA.contains(window.mouse().pos())
         {
             self.left_button_color = COLOR_BUTTON_PRESSED;
-            self.button_sound
+            self.click_sound
+                .execute(|sound| sound.play())
+                .expect("Could not play left button sound");
+            self.blah_sound
                 .execute(|sound| sound.play())
                 .expect("Could not play left button sound");
         }
@@ -129,7 +147,7 @@ impl State for DrawState {
             && RIGHT_BUTTON_AREA.contains(window.mouse().pos())
         {
             self.right_button_color = COLOR_BUTTON_PRESSED;
-            self.button_sound
+            self.click_sound
                 .execute(|sound| sound.play())
                 .expect("Could not play right button sound");
         }
@@ -146,23 +164,30 @@ impl State for DrawState {
 
     // This is called 30 times per second
     fn draw(&mut self, window: &mut Window) -> Result<()> {
+        if self.frame_count == 0 {
+            //TODO            window.set_size(window.screen_size());
+            self.welcome_sound
+                .execute(|sound| sound.play())
+                .expect("Could not play right button sound");
+        }
+
         window.clear(COLOR_BACKGROUND)?;
 
         // LOGO
         self.logo.execute(|image| {
-            window.draw(&image.area().with_center((400, 150)), Img(&image));
+            window.draw(&image.area().with_center((640, 150)), Img(&image));
             Ok(())
         })?;
 
         // TITLE TEXT
         self.extra_bold.execute(|image| {
-            window.draw(&image.area().with_center((400, 300)), Img(&image));
+            window.draw(&image.area().with_center((640, 300)), Img(&image));
             Ok(())
         })?;
 
         // LEFT BUTTON
         let left_color = self.left_button_color;
-        self.button_sound.execute(|_| {
+        self.click_sound.execute(|_| {
             window.draw(&LEFT_BUTTON_AREA, Col(left_color));
             Ok(())
         })?;
@@ -170,7 +195,7 @@ impl State for DrawState {
 
         // RIGHT BUTTON
         let right_color = self.right_button_color;
-        self.button_sound.execute(|_| {
+        self.click_sound.execute(|_| {
             window.draw(&RIGHT_BUTTON_AREA, Col(right_color));
             Ok(())
         })?;
@@ -196,6 +221,12 @@ impl State for DrawState {
             Transform::rotate(45) * Transform::scale((0.5, 0.5)),
             0,
         );*/
+
+        self.frame_count = self.frame_count + 1;
+        if self.frame_count == std::u64::MAX {
+            self.frame_count = 1;
+        }
+
         Ok(())
     }
 }
