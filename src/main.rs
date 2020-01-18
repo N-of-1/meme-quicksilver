@@ -17,7 +17,7 @@ const IMG_LOGO: &str = "N_of_1_logo_blue_transparent.png";
 const FONT_TITLE: &str = "WorkSans-ExtraBold.ttf";
 
 const SND_WELCOME: &str = "moog.ogg";
-const SND_CLICK: &str = "click.ogg";
+const SND_CLICK: &str = "click2.ogg";
 const SND_BLAH: &str = "blah.ogg";
 
 const ENV_SCREEN_SIZE: &str = "SCREEN_SIZE";
