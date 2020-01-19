@@ -12,11 +12,13 @@ use quicksilver::{
 };
 use std::env;
 
+const SCREEN_WIDTH: u16 = 1280;
+const SCREEN_HEIGHT: u16 = 768;
+
 const IMG_LOGO: &str = "N_of_1_logo_blue_transparent.png";
 
 const FONT_TITLE: &str = "WorkSans-ExtraBold.ttf";
 
-const SND_WELCOME: &str = "moog.ogg";
 const SND_CLICK: &str = "click2.ogg";
 const SND_BLAH: &str = "blah.ogg";
 
@@ -57,7 +59,6 @@ struct DrawState {
     logo: Asset<Image>,
     click_sound: Asset<Sound>,
     blah_sound: Asset<Sound>,
-    welcome_sound: Asset<Sound>,
     left_button_color: Color,
     right_button_color: Color,
 }
@@ -97,7 +98,6 @@ impl State for DrawState {
         let logo = Asset::new(Image::load(IMG_LOGO));
         let sound_click = Asset::new(Sound::load(SND_CLICK));
         let sound_blah = Asset::new(Sound::load(SND_BLAH));
-        let sound_welcome = Asset::new(Sound::load(SND_WELCOME));
 
         Ok(DrawState {
             frame_count: 0,
@@ -105,7 +105,6 @@ impl State for DrawState {
             logo: logo,
             click_sound: sound_click,
             blah_sound: sound_blah,
-            welcome_sound: sound_welcome,
             left_button_color: CLR_CLEAR,
             right_button_color: CLR_CLEAR,
         })
@@ -183,69 +182,41 @@ impl State for DrawState {
 
     // This is called 30 times per second
     fn draw(&mut self, window: &mut Window) -> Result<()> {
-        if self.frame_count == 30 {
-            // let screen_size = window.screen_size();
-            // env::set_var(
-            //     ENV_SCREEN_SIZE,
-            //     format!("{},{}", screen_size.x, screen_size.y),
-            // );
-
-            self.welcome_sound
-                .execute(|sound| sound.play())
-                .expect("Could not play right button sound");
-        }
-
         window.clear(CLR_BACKGROUND)?;
 
-        // LOGO
-        self.logo.execute(|image| {
-            window.draw(&image.area().with_center((640, 150)), Img(&image));
-            Ok(())
-        })?;
+        if self.frame_count < 90 {
+            // LOGO
+            self.logo.execute(|image| {
+                window.draw(&image.area().with_center((640, 150)), Img(&image));
+                Ok(())
+            })?;
 
-        // TITLE TEXT
-        self.extra_bold.execute(|image| {
-            window.draw(&image.area().with_center((640, 300)), Img(&image));
-            Ok(())
-        })?;
+            // TITLE TEXT
+            self.extra_bold.execute(|image| {
+                window.draw(&image.area().with_center((640, 300)), Img(&image));
+                Ok(())
+            })?;
+        }
 
-        // LEFT BUTTON
-        let left_color = self.left_button_color;
-        self.click_sound.execute(|_| {
-            window.draw(&RECT_LEFT_BUTTON, Col(left_color));
-            Ok(())
-        })?;
-        self.left_button_color = CLR_BUTTON;
+        if self.frame_count > 90 {
+            // LEFT BUTTON
+            let left_color = self.left_button_color;
+            self.click_sound.execute(|_| {
+                window.draw(&RECT_LEFT_BUTTON, Col(left_color));
+                Ok(())
+            })?;
+            self.left_button_color = CLR_BUTTON;
 
-        // RIGHT BUTTON
-        let right_color = self.right_button_color;
-        self.click_sound.execute(|_| {
-            window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
-            Ok(())
-        })?;
-        self.right_button_color = CLR_BUTTON;
+            // RIGHT BUTTON
+            let right_color = self.right_button_color;
+            self.click_sound.execute(|_| {
+                window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
+                Ok(())
+            })?;
+            self.right_button_color = CLR_BUTTON;
 
-        /*        window.draw(&Rectangle::new((100, 100), (32, 32)), Col(Color::BLUE));
-        window.draw_ex(
-            &Rectangle::new((400, 300), (32, 32)),
-            Col(Color::BLUE),
-            Transform::rotate(45),
-            10,
-        );
-        window.draw(&Circle::new((400, 300), 100), Col(Color::GREEN));
-        window.draw_ex(
-            &Line::new((50, 80), (600, 450)).with_thickness(2.0),
-            Col(Color::RED),
-            Transform::IDENTITY,
-            5,
-        );
-        window.draw_ex(
-            &Triangle::new((500, 50), (450, 100), (650, 150)),
-            Col(Color::RED),
-            Transform::rotate(45) * Transform::scale((0.5, 0.5)),
-            0,
-        );*/
-
+            window.draw(&Circle::new((400, 300), 100), Col(Color::GREEN));
+        }
         self.frame_count = self.frame_count + 1;
         if self.frame_count == std::u64::MAX {
             self.frame_count = 1;
@@ -272,7 +243,7 @@ fn main() {
         vsync: true,
         multisampling: None,
     };*/
-    let mut screen_size = Vector::new(1280, 768);
+    let mut screen_size = Vector::new(SCREEN_WIDTH, SCREEN_HEIGHT);
     match env::var(ENV_SCREEN_SIZE) {
         Ok(ss) => {
             let parsed: Vec<&str> = ss.split(',').collect();
