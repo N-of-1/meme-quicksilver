@@ -12,8 +12,15 @@ use quicksilver::{
 };
 use std::env;
 
-const SCREEN_WIDTH: u16 = 1280;
-const SCREEN_HEIGHT: u16 = 768;
+const SCREEN_WIDTH: f32 = 1280.0;
+const SCREEN_HEIGHT: f32 = 768.0;
+
+const FPS: u64 = 30;
+const FRAME_TITLE: u64 = 3 * FPS; // 30 frames/sec
+const FRAME_INTRO: u64 = FRAME_TITLE + 4 * FPS;
+const FRAME_SETTLE: u64 = FRAME_INTRO + 4 * FPS;
+const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
+// const FRAME_FINISH: u64 = FRAME_MEME + 4 * FPS;
 
 const IMG_LOGO: &str = "N_of_1_logo_blue_transparent.png";
 
@@ -43,14 +50,31 @@ const CLR_TEXT: Color = Color::BLACK;
 const CLR_BUTTON: Color = Color::BLUE;
 const CLR_BUTTON_PRESSED: Color = Color::WHITE;
 
+const BTN_WIDTH: f32 = 400.0;
+const BTN_HEIGHT: f32 = 100.0;
+const BTN_H_MARGIN: f32 = 20.0;
+const BTN_V_MARGIN: f32 = 20.0;
+
 const RECT_LEFT_BUTTON: Rectangle = Rectangle {
-    pos: Vector { x: 100.0, y: 350.0 },
-    size: Vector { x: 100.0, y: 50.0 },
+    pos: Vector {
+        x: BTN_H_MARGIN,
+        y: SCREEN_HEIGHT - BTN_V_MARGIN - BTN_HEIGHT,
+    },
+    size: Vector {
+        x: BTN_WIDTH,
+        y: BTN_HEIGHT,
+    },
 };
 
 const RECT_RIGHT_BUTTON: Rectangle = Rectangle {
-    pos: Vector { x: 350.0, y: 350.0 },
-    size: Vector { x: 100.0, y: 50.0 },
+    pos: Vector {
+        x: SCREEN_WIDTH - BTN_H_MARGIN - BTN_WIDTH,
+        y: SCREEN_HEIGHT - BTN_V_MARGIN - BTN_HEIGHT,
+    },
+    size: Vector {
+        x: BTN_WIDTH,
+        y: BTN_HEIGHT,
+    },
 };
 
 struct DrawState {
@@ -184,21 +208,40 @@ impl State for DrawState {
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         window.clear(CLR_BACKGROUND)?;
 
-        if self.frame_count < 90 {
+        if self.frame_count < FRAME_TITLE {
             // LOGO
             self.logo.execute(|image| {
-                window.draw(&image.area().with_center((640, 150)), Img(&image));
+                window.draw(
+                    &image
+                        .area()
+                        .with_center((SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0)),
+                    Img(&image),
+                );
                 Ok(())
             })?;
-
+        } else if self.frame_count < FRAME_INTRO {
             // TITLE TEXT
             self.extra_bold.execute(|image| {
-                window.draw(&image.area().with_center((640, 300)), Img(&image));
+                window.draw(
+                    &image.area().with_center((BTN_V_MARGIN, SCREEN_WIDTH / 2.0)),
+                    Img(&image),
+                );
                 Ok(())
             })?;
-        }
 
-        if self.frame_count > 90 {
+            // RIGHT BUTTON
+            let right_color = self.right_button_color;
+            self.click_sound.execute(|_| {
+                window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
+                Ok(())
+            })?;
+            self.right_button_color = CLR_BUTTON;
+        } else if self.frame_count < FRAME_SETTLE {
+            window.draw(
+                &Circle::new((SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0), 100),
+                Col(Color::GREEN),
+            );
+        } else if self.frame_count < FRAME_MEME {
             // LEFT BUTTON
             let left_color = self.left_button_color;
             self.click_sound.execute(|_| {
@@ -214,9 +257,19 @@ impl State for DrawState {
                 Ok(())
             })?;
             self.right_button_color = CLR_BUTTON;
-
-            window.draw(&Circle::new((400, 300), 100), Col(Color::GREEN));
+        } else {
+            // LOGO
+            self.logo.execute(|image| {
+                window.draw(
+                    &image
+                        .area()
+                        .with_center((SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0)),
+                    Img(&image),
+                );
+                Ok(())
+            })?;
         }
+
         self.frame_count = self.frame_count + 1;
         if self.frame_count == std::u64::MAX {
             self.frame_count = 1;
