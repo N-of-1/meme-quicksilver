@@ -183,12 +183,12 @@ impl State for DrawState {
 
     // This is called 30 times per second
     fn draw(&mut self, window: &mut Window) -> Result<()> {
-        if self.frame_count == 0 {
-            let screen_size = window.screen_size();
-            env::set_var(
-                ENV_SCREEN_SIZE,
-                format!("{},{}", screen_size.x, screen_size.y),
-            );
+        if self.frame_count == 30 {
+            // let screen_size = window.screen_size();
+            // env::set_var(
+            //     ENV_SCREEN_SIZE,
+            //     format!("{},{}", screen_size.x, screen_size.y),
+            // );
 
             self.welcome_sound
                 .execute(|sound| sound.play())
