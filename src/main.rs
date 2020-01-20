@@ -1,5 +1,10 @@
 // Draw some multi-colored geometry to the screen
+extern crate env_logger;
 extern crate quicksilver;
+// extern crate simple_logger;
+
+#[macro_use]
+extern crate log;
 
 use quicksilver::{
     combinators::result,
@@ -284,6 +289,14 @@ impl State for DrawState {
 fn main() {
     use quicksilver::graphics::*;
 
+    #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+    {
+        // simple_logger::init().expect("Can not init simple_logger");
+        env_logger::init();
+    }
+
+    info!("meme_quicksilver start");
+
     /* default Settings {
         show_cursor: true,
         min_size: None,
@@ -316,7 +329,8 @@ fn main() {
         icon_path: Some("n-icon.png"),
         fullscreen: true,
         resize: ResizeStrategy::Maintain,
-        draw_rate: 35.0, // 35ms ~= max 30fps
+        draw_rate: 35.0,          // 35ms ~= max 30fps
+        update_rate: 1000. / 60., // 60 times per second
         ..Settings::default()
     };
 

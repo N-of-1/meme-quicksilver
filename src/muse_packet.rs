@@ -1,5 +1,7 @@
+use log::*;
 use nannou_osc::rosc::OscMessage;
 use nannou_osc::rosc::OscType;
+use std::fmt::Display;
 use std::net::SocketAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -159,6 +161,11 @@ fn parse_muse_message_type(raw_message: OscMessage) -> Option<MuseMessageType> {
             None
         }
     };
+
+    match r.clone() {
+        Some(m) => warn!("OSC message: {:?}", m),
+        _ => warn!("Unparsed OSC message"),
+    }
 
     r
 }
