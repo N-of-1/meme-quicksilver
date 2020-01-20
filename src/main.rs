@@ -12,6 +12,8 @@ use quicksilver::{
 };
 use std::env;
 
+mod muse_packet;
+
 const SCREEN_WIDTH: f32 = 1280.0;
 const SCREEN_HEIGHT: f32 = 768.0;
 
