@@ -1,7 +1,7 @@
 // Draw some multi-colored geometry to the screen
 extern crate env_logger;
+extern crate nannou_osc;
 extern crate quicksilver;
-// extern crate simple_logger;
 
 #[macro_use]
 extern crate log;

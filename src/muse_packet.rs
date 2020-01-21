@@ -1,7 +1,5 @@
 use log::*;
-use nannou_osc::rosc::OscMessage;
-use nannou_osc::rosc::OscType;
-use std::fmt::Display;
+use nannou_osc::*;
 use std::net::SocketAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -30,7 +28,7 @@ pub enum MuseMessageType {
     JawClench { clench: bool },
 }
 
-pub fn parse_muse_packet(addr: SocketAddr, packet: &nannou_osc::Packet) -> Vec<MuseMessage> {
+pub fn parse_muse_packet(addr: SocketAddr, packet: &Packet) -> Vec<MuseMessage> {
     let mut raw_messages = Vec::new();
     let time = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -59,7 +57,7 @@ pub fn parse_muse_packet(addr: SocketAddr, packet: &nannou_osc::Packet) -> Vec<M
     muse_messages
 }
 
-fn parse_muse_message_type(raw_message: OscMessage) -> Option<MuseMessageType> {
+fn parse_muse_message_type(raw_message: Message) -> Option<MuseMessageType> {
     let service = raw_message.addr.as_ref();
     let args = raw_message
         .clone()
@@ -170,19 +168,31 @@ fn parse_muse_message_type(raw_message: OscMessage) -> Option<MuseMessageType> {
     r
 }
 
-fn get_float_from_args(i: usize, args: &Vec<OscType>) -> f32 {
+fn get_float_from_args(i: usize, args: &Vec<Type>) -> f32 {
     let f = args.get(i).expect("Float was not provided");
 
     match f {
-        OscType::Float(value) => *value,
+        Type::Float(value) => *value,
         _ => panic!("Muse value was not a float"),
     }
 }
 
-fn get_int_from_args(i: usize, args: &Vec<OscType>) -> i32 {
+fn get_int_from_args(i: usize, args: &Vec<Type>) -> i32 {
     let j = args.get(i).expect("Int was not provided");
     match j {
-        OscType::Int(value) => *value,
+        Type::Int(value) => *value,
         _ => panic!("Muse value was not an int"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_test_int_from_args() {
+        let v: Vec<Type> = Vec::new();
+        //        v.append(OscType::new());
+        assert_eq!(3, 4);
     }
 }

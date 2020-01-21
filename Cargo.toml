@@ -17,10 +17,13 @@ quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="im
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 meme_machine_database = {git = "https://github.com/N-of-1/meme_machine_database.git", version = "0.2.0"}
-nannou_osc = "0.1.0"
-env_logger = "0.7"
+nannou_osc = "0.1"
 #simple_logger = "1.4"
 log = "0.4"
+env_logger = "0.7"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+env_logger = "0.7"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web_logger = { version = "0.2" }
