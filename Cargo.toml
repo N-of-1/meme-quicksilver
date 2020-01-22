@@ -7,6 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+log = "0.4"
 # quicksilver="0.3"
 
 #[target.'cfg(target_arch = "x86_64")'.dependencies]
@@ -19,10 +20,6 @@ quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="im
 meme_machine_database = {git = "https://github.com/N-of-1/meme_machine_database.git", version = "0.2.0"}
 nannou_osc = "0.1"
 #simple_logger = "1.4"
-log = "0.4"
-env_logger = "0.7"
-
-[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 env_logger = "0.7"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

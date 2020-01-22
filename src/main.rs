@@ -1,6 +1,13 @@
 // Draw some multi-colored geometry to the screen
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 extern crate env_logger;
+
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+extern crate web_logger;
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 extern crate nannou_osc;
+
 extern crate quicksilver;
 
 #[macro_use]
@@ -17,28 +24,36 @@ use quicksilver::{
 };
 use std::env;
 
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 mod muse_packet;
 
 const SCREEN_WIDTH: f32 = 1280.0;
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 const SCREEN_HEIGHT: f32 = 768.0;
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+const SCREEN_HEIGHT: f32 = 650.0;
 
 const FPS: u64 = 30;
 const FRAME_TITLE: u64 = 3 * FPS; // 30 frames/sec
 const FRAME_INTRO: u64 = FRAME_TITLE + 4 * FPS;
 const FRAME_SETTLE: u64 = FRAME_INTRO + 4 * FPS;
 const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
-// const FRAME_FINISH: u64 = FRAME_MEME + 4 * FPS;
 
 const IMG_LOGO: &str = "N_of_1_logo_blue_transparent.png";
 
-const FONT_TITLE: &str = "WorkSans-ExtraBold.ttf";
+const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
+const FONT_MULI: &str = "Muli-VariableFont_wght.ttf";
+const FONT_EXTRA_BOLD_SIZE: f32 = 72.0;
+const FONT_MULI_SIZE: f32 = 40.0;
 
-const SND_CLICK: &str = "click2.ogg";
+const SND_CLICK: &str = "click.ogg";
 const SND_BLAH: &str = "blah.ogg";
 
 const ENV_SCREEN_SIZE: &str = "SCREEN_SIZE";
 
 const STR_TITLE: &str = "Meme Machine";
+const STR_HELP_TEXT: &str = "Blah blah blah some blah\nmore blah";
 
 const CLR_GREY: Color = Color {
     r: 0.5,
@@ -70,6 +85,7 @@ const CLR_NOF1_TURQOISE: Color = Color {
     b: 200. / 256.,
     a: 1.0,
 };
+
 const CLR_BACKGROUND: Color = CLR_GREY;
 const CLR_TITLE: Color = CLR_NOF1_DK_BLUE;
 const CLR_TEXT: Color = Color::BLACK;
@@ -81,7 +97,8 @@ const BTN_HEIGHT: f32 = 50.0;
 const BTN_H_MARGIN: f32 = 20.0;
 const BTN_V_MARGIN: f32 = 20.0;
 
-const TXT_V_MARGIN: f32 = 40.0;
+const TITLE_V_MARGIN: f32 = 40.0;
+const TEXT_V_MARGIN: f32 = 200.0;
 
 const RECT_LEFT_BUTTON: Rectangle = Rectangle {
     pos: Vector {
@@ -107,7 +124,8 @@ const RECT_RIGHT_BUTTON: Rectangle = Rectangle {
 
 struct DrawState {
     frame_count: u64,
-    extra_bold: Asset<Image>,
+    font_extra_bold: Asset<Image>,
+    font_muli: Asset<Image>,
     logo: Asset<Image>,
     sound_click: Asset<Sound>,
     sound_blah: Asset<Sound>,
@@ -142,9 +160,13 @@ impl DrawState {
 
 impl State for DrawState {
     fn new() -> Result<DrawState> {
-        let extra_bold = Asset::new(Font::load(FONT_TITLE).and_then(|font| {
-            let style = FontStyle::new(72.0, CLR_TITLE);
+        let font_extra_bold = Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
+            let style = FontStyle::new(FONT_EXTRA_BOLD_SIZE, CLR_TITLE);
             result(font.render(STR_TITLE, &style))
+        }));
+        let font_muli = Asset::new(Font::load(FONT_MULI).and_then(|font| {
+            let style = FontStyle::new(FONT_MULI_SIZE, CLR_TEXT);
+            result(font.render(STR_HELP_TEXT, &style))
         }));
 
         let logo = Asset::new(Image::load(IMG_LOGO));
@@ -153,7 +175,8 @@ impl State for DrawState {
 
         Ok(DrawState {
             frame_count: 0,
-            extra_bold,
+            font_extra_bold,
+            font_muli,
             logo,
             sound_click,
             sound_blah,
@@ -248,10 +271,23 @@ impl State for DrawState {
                 Ok(())
             })?;
         } else if self.frame_count < FRAME_INTRO {
-            // TITLE TEXT
-            self.extra_bold.execute(|image| {
+            // TITLE
+            self.font_extra_bold.execute(|image| {
                 window.draw(
-                    &image.area().with_center((SCREEN_WIDTH / 2.0, TXT_V_MARGIN)),
+                    &image
+                        .area()
+                        .with_center((SCREEN_WIDTH / 2.0, TITLE_V_MARGIN)),
+                    Img(&image),
+                );
+                Ok(())
+            })?;
+
+            // TITLE TEXT
+            self.font_muli.execute(|image| {
+                window.draw(
+                    &image
+                        .area()
+                        .with_center((SCREEN_WIDTH / 2.0, TEXT_V_MARGIN)),
                     Img(&image),
                 );
                 Ok(())
@@ -312,8 +348,12 @@ fn main() {
 
     #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
     {
-        // simple_logger::init().expect("Can not init simple_logger");
         env_logger::init();
+    }
+
+    #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+    {
+        web_logger::init();
     }
 
     info!("meme_quicksilver start");
@@ -355,7 +395,5 @@ fn main() {
         ..Settings::default()
     };
 
-    run::<DrawState>("Meme Machine", screen_size, settings);
+    run::<DrawState>(STR_TITLE, screen_size, settings);
 }
-
-//fn get_screen_size() -> Vec

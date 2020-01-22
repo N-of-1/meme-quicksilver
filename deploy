@@ -1,6 +1,7 @@
 # Deploy the web build locally on MacOS
-# cargo web build
+cargo web build
 cargo web deploy
 rm ~/Sites/*
 cp ./target/deploy/* ~/Sites
-open "http://localhost"
+# open "http://localhost"
+open -a "Google Chrome" http://localhost
