@@ -1,4 +1,5 @@
 use log::*;
+// use nannou_osc::rosc::*;
 use nannou_osc::*;
 use std::net::SocketAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -187,12 +188,23 @@ fn get_int_from_args(i: usize, args: &Vec<Type>) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::muse_packet::*;
 
     #[test]
-    fn test_test_int_from_args() {
-        let v: Vec<Type> = Vec::new();
-        //        v.append(OscType::new());
-        assert_eq!(3, 4);
+    fn test_int_from_args() {
+        let i = 32;
+        let mut args: Vec<Type> = Vec::new();
+        args.push(Type::Int(i));
+
+        assert_eq!(i, get_int_from_args(0, &args));
+    }
+
+    #[test]
+    fn test_float_from_args() {
+        let f = 55.0;
+        let mut args: Vec<Type> = Vec::new();
+        args.push(Type::Float(f));
+
+        assert_eq!(f, get_float_from_args(0, &args));
     }
 }
