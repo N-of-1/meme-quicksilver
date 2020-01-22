@@ -1,5 +1,17 @@
 // Draw some multi-colored geometry to the screen
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+extern crate env_logger;
+
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+extern crate web_logger;
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+extern crate nannou_osc;
+
 extern crate quicksilver;
+
+#[macro_use]
+extern crate log;
 
 use quicksilver::{
     combinators::result,
@@ -12,17 +24,36 @@ use quicksilver::{
 };
 use std::env;
 
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+mod muse_packet;
+
+const SCREEN_WIDTH: f32 = 1280.0;
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+const SCREEN_HEIGHT: f32 = 768.0;
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+const SCREEN_HEIGHT: f32 = 650.0;
+
+const FPS: u64 = 30;
+const FRAME_TITLE: u64 = 3 * FPS; // 30 frames/sec
+const FRAME_INTRO: u64 = FRAME_TITLE + 4 * FPS;
+const FRAME_SETTLE: u64 = FRAME_INTRO + 4 * FPS;
+const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
+
 const IMG_LOGO: &str = "N_of_1_logo_blue_transparent.png";
 
-const FONT_TITLE: &str = "WorkSans-ExtraBold.ttf";
+const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
+const FONT_MULI: &str = "Muli-VariableFont_wght.ttf";
+const FONT_EXTRA_BOLD_SIZE: f32 = 72.0;
+const FONT_MULI_SIZE: f32 = 40.0;
 
-const SND_WELCOME: &str = "moog.ogg";
-const SND_CLICK: &str = "click2.ogg";
+const SND_CLICK: &str = "click.ogg";
 const SND_BLAH: &str = "blah.ogg";
 
 const ENV_SCREEN_SIZE: &str = "SCREEN_SIZE";
 
 const STR_TITLE: &str = "Meme Machine";
+const STR_HELP_TEXT: &str = "Blah blah blah some blah\nmore blah";
 
 const CLR_GREY: Color = Color {
     r: 0.5,
@@ -36,28 +67,68 @@ const CLR_CLEAR: Color = Color {
     b: 0.5,
     a: 0.0,
 };
+const CLR_NOF1_DK_BLUE: Color = Color {
+    r: 31. / 256.,
+    g: 18. / 256.,
+    b: 71. / 256.,
+    a: 1.0,
+};
+const CLR_NOF1_LT_BLUE: Color = Color {
+    r: 189. / 256.,
+    g: 247. / 256.,
+    b: 255. / 256.,
+    a: 1.0,
+};
+const CLR_NOF1_TURQOISE: Color = Color {
+    r: 0. / 256.,
+    g: 200. / 256.,
+    b: 200. / 256.,
+    a: 1.0,
+};
+
 const CLR_BACKGROUND: Color = CLR_GREY;
+const CLR_TITLE: Color = CLR_NOF1_DK_BLUE;
 const CLR_TEXT: Color = Color::BLACK;
-const CLR_BUTTON: Color = Color::BLUE;
-const CLR_BUTTON_PRESSED: Color = Color::WHITE;
+const CLR_BUTTON: Color = CLR_NOF1_DK_BLUE;
+const CLR_BUTTON_PRESSED: Color = CLR_NOF1_LT_BLUE;
+
+const BTN_WIDTH: f32 = 200.0;
+const BTN_HEIGHT: f32 = 50.0;
+const BTN_H_MARGIN: f32 = 20.0;
+const BTN_V_MARGIN: f32 = 20.0;
+
+const TITLE_V_MARGIN: f32 = 40.0;
+const TEXT_V_MARGIN: f32 = 200.0;
 
 const RECT_LEFT_BUTTON: Rectangle = Rectangle {
-    pos: Vector { x: 100.0, y: 350.0 },
-    size: Vector { x: 100.0, y: 50.0 },
+    pos: Vector {
+        x: BTN_H_MARGIN,
+        y: SCREEN_HEIGHT - BTN_V_MARGIN - BTN_HEIGHT,
+    },
+    size: Vector {
+        x: BTN_WIDTH,
+        y: BTN_HEIGHT,
+    },
 };
 
 const RECT_RIGHT_BUTTON: Rectangle = Rectangle {
-    pos: Vector { x: 350.0, y: 350.0 },
-    size: Vector { x: 100.0, y: 50.0 },
+    pos: Vector {
+        x: SCREEN_WIDTH - BTN_H_MARGIN - BTN_WIDTH,
+        y: SCREEN_HEIGHT - BTN_V_MARGIN - BTN_HEIGHT,
+    },
+    size: Vector {
+        x: BTN_WIDTH,
+        y: BTN_HEIGHT,
+    },
 };
 
 struct DrawState {
     frame_count: u64,
-    extra_bold: Asset<Image>,
+    font_extra_bold: Asset<Image>,
+    font_muli: Asset<Image>,
     logo: Asset<Image>,
-    click_sound: Asset<Sound>,
-    blah_sound: Asset<Sound>,
-    welcome_sound: Asset<Sound>,
+    sound_click: Asset<Sound>,
+    sound_blah: Asset<Sound>,
     left_button_color: Color,
     right_button_color: Color,
 }
@@ -75,37 +146,40 @@ impl DrawState {
 impl DrawState {
     fn left_action(&mut self, _window: &mut Window) -> Result<()> {
         self.left_button_color = CLR_BUTTON_PRESSED;
-        self.click_sound
+        self.sound_click
             .execute(|sound| sound.play())
             .expect("Could not play left button sound");
-        self.blah_sound.execute(|sound| sound.play())
+        self.sound_blah.execute(|sound| sound.play())
     }
 
     fn right_action(&mut self, _window: &mut Window) -> Result<()> {
         self.right_button_color = CLR_BUTTON_PRESSED;
-        self.click_sound.execute(|sound| sound.play())
+        self.sound_click.execute(|sound| sound.play())
     }
 }
 
 impl State for DrawState {
     fn new() -> Result<DrawState> {
-        let extra_bold = Asset::new(Font::load(FONT_TITLE).and_then(|font| {
-            let style = FontStyle::new(72.0, CLR_TEXT);
+        let font_extra_bold = Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
+            let style = FontStyle::new(FONT_EXTRA_BOLD_SIZE, CLR_TITLE);
             result(font.render(STR_TITLE, &style))
+        }));
+        let font_muli = Asset::new(Font::load(FONT_MULI).and_then(|font| {
+            let style = FontStyle::new(FONT_MULI_SIZE, CLR_TEXT);
+            result(font.render(STR_HELP_TEXT, &style))
         }));
 
         let logo = Asset::new(Image::load(IMG_LOGO));
         let sound_click = Asset::new(Sound::load(SND_CLICK));
         let sound_blah = Asset::new(Sound::load(SND_BLAH));
-        let sound_welcome = Asset::new(Sound::load(SND_WELCOME));
 
         Ok(DrawState {
             frame_count: 0,
-            extra_bold: extra_bold,
-            logo: logo,
-            click_sound: sound_click,
-            blah_sound: sound_blah,
-            welcome_sound: sound_welcome,
+            font_extra_bold,
+            font_muli,
+            logo,
+            sound_click,
+            sound_blah,
             left_button_color: CLR_CLEAR,
             right_button_color: CLR_CLEAR,
         })
@@ -183,68 +257,82 @@ impl State for DrawState {
 
     // This is called 30 times per second
     fn draw(&mut self, window: &mut Window) -> Result<()> {
-        if self.frame_count == 0 {
-            let screen_size = window.screen_size();
-            env::set_var(
-                ENV_SCREEN_SIZE,
-                format!("{},{}", screen_size.x, screen_size.y),
-            );
-
-            self.welcome_sound
-                .execute(|sound| sound.play())
-                .expect("Could not play right button sound");
-        }
-
         window.clear(CLR_BACKGROUND)?;
 
-        // LOGO
-        self.logo.execute(|image| {
-            window.draw(&image.area().with_center((640, 150)), Img(&image));
-            Ok(())
-        })?;
+        if self.frame_count < FRAME_TITLE {
+            // LOGO
+            self.logo.execute(|image| {
+                window.draw(
+                    &image
+                        .area()
+                        .with_center((SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0)),
+                    Img(&image),
+                );
+                Ok(())
+            })?;
+        } else if self.frame_count < FRAME_INTRO {
+            // TITLE
+            self.font_extra_bold.execute(|image| {
+                window.draw(
+                    &image
+                        .area()
+                        .with_center((SCREEN_WIDTH / 2.0, TITLE_V_MARGIN)),
+                    Img(&image),
+                );
+                Ok(())
+            })?;
 
-        // TITLE TEXT
-        self.extra_bold.execute(|image| {
-            window.draw(&image.area().with_center((640, 300)), Img(&image));
-            Ok(())
-        })?;
+            // TITLE TEXT
+            self.font_muli.execute(|image| {
+                window.draw(
+                    &image
+                        .area()
+                        .with_center((SCREEN_WIDTH / 2.0, TEXT_V_MARGIN)),
+                    Img(&image),
+                );
+                Ok(())
+            })?;
 
-        // LEFT BUTTON
-        let left_color = self.left_button_color;
-        self.click_sound.execute(|_| {
-            window.draw(&RECT_LEFT_BUTTON, Col(left_color));
-            Ok(())
-        })?;
-        self.left_button_color = CLR_BUTTON;
+            // RIGHT BUTTON
+            let right_color = self.right_button_color;
+            self.sound_click.execute(|_| {
+                window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
+                Ok(())
+            })?;
+            self.right_button_color = CLR_BUTTON;
+        } else if self.frame_count < FRAME_SETTLE {
+            window.draw(
+                &Circle::new((SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0), 100),
+                Col(Color::GREEN),
+            );
+        } else if self.frame_count < FRAME_MEME {
+            // LEFT BUTTON
+            let left_color = self.left_button_color;
+            self.sound_click.execute(|_| {
+                window.draw(&RECT_LEFT_BUTTON, Col(left_color));
+                Ok(())
+            })?;
+            self.left_button_color = CLR_BUTTON;
 
-        // RIGHT BUTTON
-        let right_color = self.right_button_color;
-        self.click_sound.execute(|_| {
-            window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
-            Ok(())
-        })?;
-        self.right_button_color = CLR_BUTTON;
-
-        /*        window.draw(&Rectangle::new((100, 100), (32, 32)), Col(Color::BLUE));
-        window.draw_ex(
-            &Rectangle::new((400, 300), (32, 32)),
-            Col(Color::BLUE),
-            Transform::rotate(45),
-            10,
-        );
-        window.draw(&Circle::new((400, 300), 100), Col(Color::GREEN));
-        window.draw_ex(
-            &Line::new((50, 80), (600, 450)).with_thickness(2.0),
-            Col(Color::RED),
-            Transform::IDENTITY,
-            5,
-        );
-        window.draw_ex(
-            &Triangle::new((500, 50), (450, 100), (650, 150)),
-            Col(Color::RED),
-            Transform::rotate(45) * Transform::scale((0.5, 0.5)),
-            0,
-        );*/
+            // RIGHT BUTTON
+            let right_color = self.right_button_color;
+            self.sound_click.execute(|_| {
+                window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
+                Ok(())
+            })?;
+            self.right_button_color = CLR_BUTTON;
+        } else {
+            // LOGO
+            self.logo.execute(|image| {
+                window.draw(
+                    &image
+                        .area()
+                        .with_center((SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0)),
+                    Img(&image),
+                );
+                Ok(())
+            })?;
+        }
 
         self.frame_count = self.frame_count + 1;
         if self.frame_count == std::u64::MAX {
@@ -257,6 +345,18 @@ impl State for DrawState {
 
 fn main() {
     use quicksilver::graphics::*;
+
+    #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+    {
+        env_logger::init();
+    }
+
+    #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+    {
+        web_logger::init();
+    }
+
+    info!("meme_quicksilver start");
 
     /* default Settings {
         show_cursor: true,
@@ -272,7 +372,7 @@ fn main() {
         vsync: true,
         multisampling: None,
     };*/
-    let mut screen_size = Vector::new(1280, 768);
+    let mut screen_size = Vector::new(SCREEN_WIDTH, SCREEN_HEIGHT);
     match env::var(ENV_SCREEN_SIZE) {
         Ok(ss) => {
             let parsed: Vec<&str> = ss.split(',').collect();
@@ -290,11 +390,10 @@ fn main() {
         icon_path: Some("n-icon.png"),
         fullscreen: true,
         resize: ResizeStrategy::Maintain,
-        draw_rate: 35.0, // 35ms ~= max 30fps
+        draw_rate: 35.0,          // 35ms ~= max 30fps
+        update_rate: 1000. / 60., // 60 times per second
         ..Settings::default()
     };
 
-    run::<DrawState>("Meme Machine", screen_size, settings);
+    run::<DrawState>(STR_TITLE, screen_size, settings);
 }
-
-//fn get_screen_size() -> Vec
