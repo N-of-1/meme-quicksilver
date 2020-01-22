@@ -52,15 +52,36 @@ const CLR_CLEAR: Color = Color {
     b: 0.5,
     a: 0.0,
 };
+const CLR_NOF1_DK_BLUE: Color = Color {
+    r: 31. / 256.,
+    g: 18. / 256.,
+    b: 71. / 256.,
+    a: 1.0,
+};
+const CLR_NOF1_LT_BLUE: Color = Color {
+    r: 189. / 256.,
+    g: 247. / 256.,
+    b: 255. / 256.,
+    a: 1.0,
+};
+const CLR_NOF1_TURQOISE: Color = Color {
+    r: 0. / 256.,
+    g: 200. / 256.,
+    b: 200. / 256.,
+    a: 1.0,
+};
 const CLR_BACKGROUND: Color = CLR_GREY;
+const CLR_TITLE: Color = CLR_NOF1_DK_BLUE;
 const CLR_TEXT: Color = Color::BLACK;
-const CLR_BUTTON: Color = Color::BLUE;
-const CLR_BUTTON_PRESSED: Color = Color::WHITE;
+const CLR_BUTTON: Color = CLR_NOF1_DK_BLUE;
+const CLR_BUTTON_PRESSED: Color = CLR_NOF1_LT_BLUE;
 
-const BTN_WIDTH: f32 = 400.0;
-const BTN_HEIGHT: f32 = 100.0;
+const BTN_WIDTH: f32 = 200.0;
+const BTN_HEIGHT: f32 = 50.0;
 const BTN_H_MARGIN: f32 = 20.0;
 const BTN_V_MARGIN: f32 = 20.0;
+
+const TXT_V_MARGIN: f32 = 40.0;
 
 const RECT_LEFT_BUTTON: Rectangle = Rectangle {
     pos: Vector {
@@ -88,8 +109,8 @@ struct DrawState {
     frame_count: u64,
     extra_bold: Asset<Image>,
     logo: Asset<Image>,
-    click_sound: Asset<Sound>,
-    blah_sound: Asset<Sound>,
+    sound_click: Asset<Sound>,
+    sound_blah: Asset<Sound>,
     left_button_color: Color,
     right_button_color: Color,
 }
@@ -107,22 +128,22 @@ impl DrawState {
 impl DrawState {
     fn left_action(&mut self, _window: &mut Window) -> Result<()> {
         self.left_button_color = CLR_BUTTON_PRESSED;
-        self.click_sound
+        self.sound_click
             .execute(|sound| sound.play())
             .expect("Could not play left button sound");
-        self.blah_sound.execute(|sound| sound.play())
+        self.sound_blah.execute(|sound| sound.play())
     }
 
     fn right_action(&mut self, _window: &mut Window) -> Result<()> {
         self.right_button_color = CLR_BUTTON_PRESSED;
-        self.click_sound.execute(|sound| sound.play())
+        self.sound_click.execute(|sound| sound.play())
     }
 }
 
 impl State for DrawState {
     fn new() -> Result<DrawState> {
         let extra_bold = Asset::new(Font::load(FONT_TITLE).and_then(|font| {
-            let style = FontStyle::new(72.0, CLR_TEXT);
+            let style = FontStyle::new(72.0, CLR_TITLE);
             result(font.render(STR_TITLE, &style))
         }));
 
@@ -132,10 +153,10 @@ impl State for DrawState {
 
         Ok(DrawState {
             frame_count: 0,
-            extra_bold: extra_bold,
-            logo: logo,
-            click_sound: sound_click,
-            blah_sound: sound_blah,
+            extra_bold,
+            logo,
+            sound_click,
+            sound_blah,
             left_button_color: CLR_CLEAR,
             right_button_color: CLR_CLEAR,
         })
@@ -230,7 +251,7 @@ impl State for DrawState {
             // TITLE TEXT
             self.extra_bold.execute(|image| {
                 window.draw(
-                    &image.area().with_center((BTN_V_MARGIN, SCREEN_WIDTH / 2.0)),
+                    &image.area().with_center((SCREEN_WIDTH / 2.0, TXT_V_MARGIN)),
                     Img(&image),
                 );
                 Ok(())
@@ -238,7 +259,7 @@ impl State for DrawState {
 
             // RIGHT BUTTON
             let right_color = self.right_button_color;
-            self.click_sound.execute(|_| {
+            self.sound_click.execute(|_| {
                 window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
                 Ok(())
             })?;
@@ -251,7 +272,7 @@ impl State for DrawState {
         } else if self.frame_count < FRAME_MEME {
             // LEFT BUTTON
             let left_color = self.left_button_color;
-            self.click_sound.execute(|_| {
+            self.sound_click.execute(|_| {
                 window.draw(&RECT_LEFT_BUTTON, Col(left_color));
                 Ok(())
             })?;
@@ -259,7 +280,7 @@ impl State for DrawState {
 
             // RIGHT BUTTON
             let right_color = self.right_button_color;
-            self.click_sound.execute(|_| {
+            self.sound_click.execute(|_| {
                 window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
                 Ok(())
             })?;
