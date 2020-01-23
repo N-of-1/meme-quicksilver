@@ -1,3 +1,6 @@
+/// Run a test where a Muse headset collects EEG data based on a series of
+/// images presented to the wearer. Push that raw collected data to a Postgresql database.
+
 // Draw some multi-colored geometry to the screen
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 extern crate env_logger;
@@ -13,26 +16,27 @@ extern crate quicksilver;
 #[macro_use]
 extern crate log;
 
+use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
     combinators::result,
-    geom::{Circle, Line, Rectangle, Shape, Transform, Triangle, Vector},
+    geom::{Line, Rectangle, Shape, Vector},
     graphics::{Background::Col, Background::Img, Color, Font, FontStyle, Image, ResizeStrategy},
     input::{ButtonState, GamepadButton, Key, MouseButton},
     lifecycle::{run, Asset, Event, Settings, State, Window},
     sound::Sound,
     Future, Result,
 };
-use std::env;
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 mod muse_packet;
 
-const SCREEN_WIDTH: f32 = 1280.0;
+mod muse_model;
+mod view_circles;
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-const SCREEN_HEIGHT: f32 = 768.0;
+const SCREEN_SIZE: (f32, f32) = (1280.0, 768.0);
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
-const SCREEN_HEIGHT: f32 = 650.0;
+const SCREEN_SIZE: (f32, f32) = (1280.0, 650.0);
 
 const FPS: u64 = 30;
 const FRAME_TITLE: u64 = 3 * FPS; // 30 frames/sec
@@ -40,97 +44,95 @@ const FRAME_INTRO: u64 = FRAME_TITLE + 4 * FPS;
 const FRAME_SETTLE: u64 = FRAME_INTRO + 4 * FPS;
 const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
 
-const IMG_LOGO: &str = "N_of_1_logo_blue_transparent.png";
+const IMAGE_LOGO: &str = "N_of_1_logo_blue_transparent.png";
 
 const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
 const FONT_MULI: &str = "Muli-VariableFont_wght.ttf";
 const FONT_EXTRA_BOLD_SIZE: f32 = 72.0;
 const FONT_MULI_SIZE: f32 = 40.0;
 
-const SND_CLICK: &str = "click.ogg";
-const SND_BLAH: &str = "blah.ogg";
-
-const ENV_SCREEN_SIZE: &str = "SCREEN_SIZE";
+const SOUND_CLICK: &str = "click.ogg";
+const SOUND_BLAH: &str = "blah.ogg";
 
 const STR_TITLE: &str = "Meme Machine";
-const STR_HELP_TEXT: &str = "Blah blah blah some blah\nmore blah";
+const STR_HELP_TEXT: &str = "First relax and watch your mind calm\n\nYou will then be shown some images. Press the left and right images to tell us if they are\nfamiliar and how they make you feel.";
 
-const CLR_GREY: Color = Color {
+const COLOR_GREY: Color = Color {
     r: 0.5,
     g: 0.5,
     b: 0.5,
     a: 1.0,
 };
-const CLR_CLEAR: Color = Color {
+const COLOR_CLEAR: Color = Color {
     r: 0.5,
     g: 0.5,
     b: 0.5,
     a: 0.0,
 };
-const CLR_NOF1_DK_BLUE: Color = Color {
+const COLOR_NOF1_DARK_BLUE: Color = Color {
     r: 31. / 256.,
     g: 18. / 256.,
     b: 71. / 256.,
     a: 1.0,
 };
-const CLR_NOF1_LT_BLUE: Color = Color {
+const COLOR_NOF1_LIGHT_BLUE: Color = Color {
     r: 189. / 256.,
     g: 247. / 256.,
     b: 255. / 256.,
     a: 1.0,
 };
-const CLR_NOF1_TURQOISE: Color = Color {
+const COLOR_NOF1_TURQOISE: Color = Color {
     r: 0. / 256.,
     g: 200. / 256.,
     b: 200. / 256.,
     a: 1.0,
 };
+const COLOR_BACKGROUND: Color = COLOR_GREY;
+const COLOR_TITLE: Color = COLOR_NOF1_DARK_BLUE;
+const COLOR_TEXT: Color = Color::BLACK;
+const COLOR_BUTTON: Color = COLOR_NOF1_DARK_BLUE;
+const COLOR_BUTTON_PRESSED: Color = COLOR_NOF1_LIGHT_BLUE;
 
-const CLR_BACKGROUND: Color = CLR_GREY;
-const CLR_TITLE: Color = CLR_NOF1_DK_BLUE;
-const CLR_TEXT: Color = Color::BLACK;
-const CLR_BUTTON: Color = CLR_NOF1_DK_BLUE;
-const CLR_BUTTON_PRESSED: Color = CLR_NOF1_LT_BLUE;
-
-const BTN_WIDTH: f32 = 200.0;
-const BTN_HEIGHT: f32 = 50.0;
-const BTN_H_MARGIN: f32 = 20.0;
-const BTN_V_MARGIN: f32 = 20.0;
+const BUTTON_WIDTH: f32 = 200.0;
+const BUTTON_HEIGHT: f32 = 50.0;
+const BUTTON_H_MARGIN: f32 = 20.0;
+const BUTTON_V_MARGIN: f32 = 20.0;
 
 const TITLE_V_MARGIN: f32 = 40.0;
 const TEXT_V_MARGIN: f32 = 200.0;
 
 const RECT_LEFT_BUTTON: Rectangle = Rectangle {
     pos: Vector {
-        x: BTN_H_MARGIN,
-        y: SCREEN_HEIGHT - BTN_V_MARGIN - BTN_HEIGHT,
+        x: BUTTON_H_MARGIN,
+        y: SCREEN_SIZE.1 - BUTTON_V_MARGIN - BUTTON_HEIGHT,
     },
     size: Vector {
-        x: BTN_WIDTH,
-        y: BTN_HEIGHT,
+        x: BUTTON_WIDTH,
+        y: BUTTON_HEIGHT,
     },
 };
 
 const RECT_RIGHT_BUTTON: Rectangle = Rectangle {
     pos: Vector {
-        x: SCREEN_WIDTH - BTN_H_MARGIN - BTN_WIDTH,
-        y: SCREEN_HEIGHT - BTN_V_MARGIN - BTN_HEIGHT,
+        x: SCREEN_SIZE.0 - BUTTON_H_MARGIN - BUTTON_WIDTH,
+        y: SCREEN_SIZE.1 - BUTTON_V_MARGIN - BUTTON_HEIGHT,
     },
     size: Vector {
-        x: BTN_WIDTH,
-        y: BTN_HEIGHT,
+        x: BUTTON_WIDTH,
+        y: BUTTON_HEIGHT,
     },
 };
 
 struct DrawState {
     frame_count: u64,
-    font_extra_bold: Asset<Image>,
-    font_muli: Asset<Image>,
+    title_text: Asset<Image>,
+    help_text: Asset<Image>,
     logo: Asset<Image>,
     sound_click: Asset<Sound>,
     sound_blah: Asset<Sound>,
     left_button_color: Color,
     right_button_color: Color,
+    muse_model: MuseModel,
 }
 
 impl DrawState {
@@ -145,7 +147,7 @@ impl DrawState {
 
 impl DrawState {
     fn left_action(&mut self, _window: &mut Window) -> Result<()> {
-        self.left_button_color = CLR_BUTTON_PRESSED;
+        self.left_button_color = COLOR_BUTTON_PRESSED;
         self.sound_click
             .execute(|sound| sound.play())
             .expect("Could not play left button sound");
@@ -153,35 +155,41 @@ impl DrawState {
     }
 
     fn right_action(&mut self, _window: &mut Window) -> Result<()> {
-        self.right_button_color = CLR_BUTTON_PRESSED;
+        self.right_button_color = COLOR_BUTTON_PRESSED;
         self.sound_click.execute(|sound| sound.play())
     }
 }
 
 impl State for DrawState {
     fn new() -> Result<DrawState> {
-        let font_extra_bold = Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
-            let style = FontStyle::new(FONT_EXTRA_BOLD_SIZE, CLR_TITLE);
-            result(font.render(STR_TITLE, &style))
-        }));
-        let font_muli = Asset::new(Font::load(FONT_MULI).and_then(|font| {
-            let style = FontStyle::new(FONT_MULI_SIZE, CLR_TEXT);
-            result(font.render(STR_HELP_TEXT, &style))
+        let title_font = Font::load(FONT_EXTRA_BOLD);
+        let help_font = Font::load(FONT_MULI);
+
+        let title_text = Asset::new(title_font.and_then(|font| {
+            result(font.render(
+                STR_TITLE,
+                &FontStyle::new(FONT_EXTRA_BOLD_SIZE, COLOR_TITLE),
+            ))
         }));
 
-        let logo = Asset::new(Image::load(IMG_LOGO));
-        let sound_click = Asset::new(Sound::load(SND_CLICK));
-        let sound_blah = Asset::new(Sound::load(SND_BLAH));
+        let help_text = Asset::new(help_font.and_then(|font| {
+            result(font.render(STR_HELP_TEXT, &FontStyle::new(FONT_MULI_SIZE, COLOR_TEXT)))
+        }));
+
+        let logo = Asset::new(Image::load(IMAGE_LOGO));
+        let sound_click = Asset::new(Sound::load(SOUND_CLICK));
+        let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
 
         Ok(DrawState {
             frame_count: 0,
-            font_extra_bold,
-            font_muli,
+            title_text,
+            help_text,
             logo,
             sound_click,
             sound_blah,
-            left_button_color: CLR_CLEAR,
-            right_button_color: CLR_CLEAR,
+            left_button_color: COLOR_CLEAR,
+            right_button_color: COLOR_CLEAR,
+            muse_model: muse_model::model(),
         })
     }
 
@@ -244,6 +252,24 @@ impl State for DrawState {
 
         // TODO NANO SEEED BUTTON PRESS
 
+        // F1
+        if window.keyboard()[Key::F1] == ButtonState::Pressed {
+            self.muse_model.display_type = DisplayType::FourCircles;
+        }
+
+        // F2
+        if window.keyboard()[Key::F2] == ButtonState::Pressed {
+            self.muse_model.display_type = DisplayType::Dowsiness;
+        }
+
+        // F3
+        if window.keyboard()[Key::F3] == ButtonState::Pressed {
+            self.muse_model.display_type = DisplayType::Emotion;
+        }
+
+        self.muse_model.receive_packets();
+        self.muse_model.count_down();
+
         Ok(())
     }
 
@@ -257,7 +283,7 @@ impl State for DrawState {
 
     // This is called 30 times per second
     fn draw(&mut self, window: &mut Window) -> Result<()> {
-        window.clear(CLR_BACKGROUND)?;
+        window.clear(COLOR_BACKGROUND)?;
 
         if self.frame_count < FRAME_TITLE {
             // LOGO
@@ -265,29 +291,29 @@ impl State for DrawState {
                 window.draw(
                     &image
                         .area()
-                        .with_center((SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0)),
+                        .with_center((SCREEN_SIZE.0 / 2.0, SCREEN_SIZE.1 / 2.0)),
                     Img(&image),
                 );
                 Ok(())
             })?;
         } else if self.frame_count < FRAME_INTRO {
             // TITLE
-            self.font_extra_bold.execute(|image| {
+            self.title_text.execute(|image| {
                 window.draw(
                     &image
                         .area()
-                        .with_center((SCREEN_WIDTH / 2.0, TITLE_V_MARGIN)),
+                        .with_center((SCREEN_SIZE.0 / 2.0, TITLE_V_MARGIN)),
                     Img(&image),
                 );
                 Ok(())
             })?;
 
-            // TITLE TEXT
-            self.font_muli.execute(|image| {
+            // TEXT
+            self.help_text.execute(|image| {
                 window.draw(
                     &image
                         .area()
-                        .with_center((SCREEN_WIDTH / 2.0, TEXT_V_MARGIN)),
+                        .with_center((SCREEN_SIZE.0 / 2.0, TEXT_V_MARGIN)),
                     Img(&image),
                 );
                 Ok(())
@@ -299,12 +325,9 @@ impl State for DrawState {
                 window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
                 Ok(())
             })?;
-            self.right_button_color = CLR_BUTTON;
+            self.right_button_color = COLOR_BUTTON;
         } else if self.frame_count < FRAME_SETTLE {
-            window.draw(
-                &Circle::new((SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0), 100),
-                Col(Color::GREEN),
-            );
+            view_circles::draw(&self.muse_model, window);
         } else if self.frame_count < FRAME_MEME {
             // LEFT BUTTON
             let left_color = self.left_button_color;
@@ -312,7 +335,7 @@ impl State for DrawState {
                 window.draw(&RECT_LEFT_BUTTON, Col(left_color));
                 Ok(())
             })?;
-            self.left_button_color = CLR_BUTTON;
+            self.left_button_color = COLOR_BUTTON;
 
             // RIGHT BUTTON
             let right_color = self.right_button_color;
@@ -320,14 +343,14 @@ impl State for DrawState {
                 window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
                 Ok(())
             })?;
-            self.right_button_color = CLR_BUTTON;
+            self.right_button_color = COLOR_BUTTON;
         } else {
             // LOGO
             self.logo.execute(|image| {
                 window.draw(
                     &image
                         .area()
-                        .with_center((SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0)),
+                        .with_center((SCREEN_SIZE.0 / 2.0, SCREEN_SIZE.1 / 2.0)),
                     Img(&image),
                 );
                 Ok(())
@@ -358,34 +381,6 @@ fn main() {
 
     info!("meme_quicksilver start");
 
-    /* default Settings {
-        show_cursor: true,
-        min_size: None,
-        max_size: None,
-        resize: ResizeStrategy::default(),
-        scale: ImageScaleStrategy::default(),
-        fullscreen: false,
-        update_rate: 1000. / 60.,
-        max_updates: 0,
-        draw_rate: 0.,
-        icon_path: None,
-        vsync: true,
-        multisampling: None,
-    };*/
-    let mut screen_size = Vector::new(SCREEN_WIDTH, SCREEN_HEIGHT);
-    match env::var(ENV_SCREEN_SIZE) {
-        Ok(ss) => {
-            let parsed: Vec<&str> = ss.split(',').collect();
-            screen_size.x = parsed[0]
-                .parse::<f32>()
-                .expect("Local variable for screen size in wrong format 'x,y'");
-            screen_size.y = parsed[1]
-                .parse::<f32>()
-                .expect("Local variable for screen size in wrong format 'x,y'");
-        }
-        _ => (),
-    }
-
     let settings = Settings {
         icon_path: Some("n-icon.png"),
         fullscreen: true,
@@ -395,5 +390,9 @@ fn main() {
         ..Settings::default()
     };
 
-    run::<DrawState>(STR_TITLE, screen_size, settings);
+    run::<DrawState>(
+        STR_TITLE,
+        Vector::new(SCREEN_SIZE.0, SCREEN_SIZE.1),
+        settings,
+    )
 }
