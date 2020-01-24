@@ -67,12 +67,13 @@ fn asymmetry(x: &[f32; 4], n: f32) -> f32 {
     base.powf(x[1] / n - x[2] / n)
 }
 
+/// A bigger yellow circle indiates greater happiness. Maybe.
 fn draw_emotion_view(model: &MuseModel, window: &mut Window) {
     let lizard_mind = average_from_four_electrodes(&model.theta);
     let asymm = asymmetry(&model.alpha, lizard_mind);
 
-    draw_polygon(COLOR_ALPHA, asymm, window, model.scale, (0.0, 0.0));
-    draw_polygon(COLOR_THETA, lizard_mind, window, model.scale, (0.0, 0.0));
+    //    draw_polygon(COLOR_THETA, lizard_mind, window, model.scale, (0.0, 0.0));
+    draw_polygon(COLOR_EMOTION, asymm / 5.0, window, model.scale, (0.0, 0.0));
 }
 
 fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
@@ -157,6 +158,7 @@ const RECT_KEY: (f32, f32) = (50.0, 10.0);
 //     })?;
 // }
 
+/// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
 fn draw_polygon(line_color: Color, value: f32, window: &mut Window, scale: f32, shift: (f32, f32)) {
     let screen_size = window.screen_size();
     let scale = screen_size.x / scale;

@@ -41,7 +41,7 @@ const SCREEN_SIZE: (f32, f32) = (1280.0, 650.0);
 const FPS: u64 = 30;
 const FRAME_TITLE: u64 = 3 * FPS; // 30 frames/sec
 const FRAME_INTRO: u64 = FRAME_TITLE + 4 * FPS;
-const FRAME_SETTLE: u64 = FRAME_INTRO + 4 * FPS;
+const FRAME_SETTLE: u64 = FRAME_INTRO + 12000 * FPS;
 const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
 
 const IMAGE_LOGO: &str = "N_of_1_logo_blue_transparent.png";
@@ -92,6 +92,7 @@ const COLOR_TITLE: Color = COLOR_NOF1_DARK_BLUE;
 const COLOR_TEXT: Color = Color::BLACK;
 const COLOR_BUTTON: Color = COLOR_NOF1_DARK_BLUE;
 const COLOR_BUTTON_PRESSED: Color = COLOR_NOF1_LIGHT_BLUE;
+const COLOR_EMOTION: Color = Color::YELLOW;
 
 const BUTTON_WIDTH: f32 = 200.0;
 const BUTTON_HEIGHT: f32 = 50.0;

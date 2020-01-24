@@ -93,8 +93,8 @@ pub fn model() -> MuseModel {
         blink_countdown: 0,
         touching_forehead_countdown: 0,
         jaw_clench_countdown: 0,
-        scale: 2.5, // Make the circles relatively larger or smaller
-        display_type: DisplayType::FourCircles, // Current drawing mode
+        scale: 1.5, // Make the circles relatively larger or smaller
+        display_type: DisplayType::Emotion, // Current drawing mode
     }
 }
 
