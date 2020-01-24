@@ -1,0 +1,4 @@
+AddType application/wasm .wasm
+AddType image/png .png
+AddType audio/ogg .ogg
+AddType application/x-font-ttf .ttf
