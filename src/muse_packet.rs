@@ -1,12 +1,12 @@
+/// Muse packets are received over an OSC protol USP socket from MindMonitor app
+/// running on Android on the same WIFI
 use log::*;
-// use nannou_osc::rosc::*;
 use nannou_osc::*;
 use std::net::SocketAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Clone, Debug)]
 pub struct MuseMessage {
-    //TODO Add message receive time here
     pub time: Duration, // Since UNIX_EPOCH, the beginning of 1970
     pub ip_address: SocketAddr,
     pub muse_message_type: MuseMessageType,
@@ -35,8 +35,6 @@ pub fn parse_muse_packet(addr: SocketAddr, packet: &Packet) -> Vec<MuseMessage> 
         .duration_since(UNIX_EPOCH)
         .expect("System clock is not set correctly");
 
-    //TODO Add current time as message receive time here
-
     packet.clone().unfold(&mut raw_messages);
     let mut muse_messages = Vec::with_capacity(raw_messages.len());
 
@@ -58,7 +56,7 @@ pub fn parse_muse_packet(addr: SocketAddr, packet: &Packet) -> Vec<MuseMessage> 
     muse_messages
 }
 
-fn parse_muse_message_type(raw_message: Message) -> Option<MuseMessageType> {
+pub fn parse_muse_message_type(raw_message: Message) -> Option<MuseMessageType> {
     let service = raw_message.addr.as_ref();
     let args = raw_message
         .clone()
@@ -142,7 +140,7 @@ fn parse_muse_message_type(raw_message: Message) -> Option<MuseMessageType> {
 
         "/muse/elements/blink" => {
             let blink = get_int_from_args(0, &args);
-            //            println!("Blink: {:#?}", blink);
+            info!("Blink: {:#?}", blink);
 
             Some(MuseMessageType::Blink { blink: blink != 0 })
         }
@@ -156,7 +154,7 @@ fn parse_muse_message_type(raw_message: Message) -> Option<MuseMessageType> {
         }),
 
         _ => {
-            eprintln!("Unparsed message type: {:#?} {:#?}", service, raw_message);
+            error!("Unparsed message type: {:#?} {:#?}", service, raw_message);
             None
         }
     };
