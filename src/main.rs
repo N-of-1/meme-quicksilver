@@ -47,7 +47,8 @@ const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
 const IMAGE_LOGO: &str = "N_of_1_logo_blue_transparent.png";
 
 const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
-const FONT_MULI: &str = "Muli-VariableFont_wght.ttf";
+const FONT_MULI: &str = "Muli.ttf";
+// const FONT_MULI: &str = "Muli-VariableFont_wght.ttf";
 const FONT_EXTRA_BOLD_SIZE: f32 = 72.0;
 const FONT_MULI_SIZE: f32 = 40.0;
 
