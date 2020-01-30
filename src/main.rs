@@ -48,7 +48,6 @@ const IMAGE_LOGO: &str = "N_of_1_logo_blue_transparent.png";
 
 const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
 const FONT_MULI: &str = "Muli.ttf";
-// const FONT_MULI: &str = "Muli-VariableFont_wght.ttf";
 const FONT_EXTRA_BOLD_SIZE: f32 = 72.0;
 const FONT_MULI_SIZE: f32 = 40.0;
 
@@ -125,7 +124,14 @@ const RECT_RIGHT_BUTTON: Rectangle = Rectangle {
     },
 };
 
-struct DrawState {
+// Make sure this matches the `TARGET_PORT` in the `osc_sender.rs` example.
+const PORT: u16 = 34254;
+
+pub trait OscSocket: Sized {
+    fn osc_socket_receive();
+}
+
+struct AppState {
     frame_count: u64,
     title_text: Asset<Image>,
     help_text: Asset<Image>,
@@ -137,7 +143,7 @@ struct DrawState {
     muse_model: MuseModel,
 }
 
-impl DrawState {
+impl AppState {
     // Perform any shutdown actions
     // Do not call this directly to end the app. Instead call window.close();
     fn shutdown_hooks(&mut self) -> Result<()> {
@@ -145,9 +151,7 @@ impl DrawState {
 
         Ok(())
     }
-}
 
-impl DrawState {
     fn left_action(&mut self, _window: &mut Window) -> Result<()> {
         self.left_button_color = COLOR_BUTTON_PRESSED;
         self.sound_click
@@ -162,8 +166,8 @@ impl DrawState {
     }
 }
 
-impl State for DrawState {
-    fn new() -> Result<DrawState> {
+impl State for AppState {
+    fn new() -> Result<AppState> {
         let title_font = Font::load(FONT_EXTRA_BOLD);
         let help_font = Font::load(FONT_MULI);
 
@@ -182,7 +186,7 @@ impl State for DrawState {
         let sound_click = Asset::new(Sound::load(SOUND_CLICK));
         let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
 
-        Ok(DrawState {
+        Ok(AppState {
             frame_count: 0,
             title_text,
             help_text,
@@ -191,7 +195,7 @@ impl State for DrawState {
             sound_blah,
             left_button_color: COLOR_CLEAR,
             right_button_color: COLOR_CLEAR,
-            muse_model: muse_model::model(),
+            muse_model: muse_model::MuseModel::new(),
         })
     }
 
@@ -269,7 +273,7 @@ impl State for DrawState {
             self.muse_model.display_type = DisplayType::Emotion;
         }
 
-        self.muse_model.receive_packets();
+        muse_model::osc_socket_receive(&mut self.muse_model);
         self.muse_model.count_down();
 
         Ok(())
@@ -366,6 +370,11 @@ impl State for DrawState {
 
         Ok(())
     }
+
+    fn handle_error(error: quicksilver::Error) {
+        error!("Unhandled error: {:?}", error);
+        panic!("Unhandled error: {:?}", error);
+    }
 }
 
 fn main() {
@@ -392,7 +401,7 @@ fn main() {
         ..Settings::default()
     };
 
-    run::<DrawState>(
+    run::<AppState>(
         STR_TITLE,
         Vector::new(SCREEN_SIZE.0, SCREEN_SIZE.1),
         settings,

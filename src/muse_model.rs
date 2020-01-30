@@ -1,20 +1,25 @@
 /// Muse data model and associated message handling from muse_packet
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use crate::muse_packet::*;
-use log::*;
-use nannou_osc as osc;
+
+// use log::*;
 use std::fmt;
-use std::fmt::Debug;
+// use std::fmt::Debug;
 use std::fmt::Formatter;
+use std::net::SocketAddr;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::Duration;
 
-// Make sure this matches the `TARGET_PORT` in the `osc_sender.rs` example.
-const PORT: u16 = 34254;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use nannou_osc as osc;
 
 const FOREHEAD_COUNTDOWN: i32 = 30; // 60th of a second counts
 const BLINK_COUNTDOWN: i32 = 30;
 const CLENCH_COUNTDOWN: i32 = 30;
+
+// Make sure this matches the `TARGET_PORT` in the `osc_sender.rs` example.
+const PORT: u16 = 34254;
 
 /// Make it easier to print out the message receiver object for debug purposes
 // struct ReceiverDebug<T> {
@@ -35,10 +40,34 @@ pub enum DisplayType {
     Emotion,
 }
 
+#[derive(Clone, Debug)]
+pub enum MuseMessageType {
+    Eeg { a: f32, b: f32, c: f32, d: f32 }, // microVolts
+    Accelerometer { x: f32, y: f32, z: f32 },
+    Gyro { x: f32, y: f32, z: f32 },
+    Alpha { a: f32, b: f32, c: f32, d: f32 }, // microVolts
+    Beta { a: f32, b: f32, c: f32, d: f32 },  // microVolts
+    Gamma { a: f32, b: f32, c: f32, d: f32 }, // microVolts
+    Delta { a: f32, b: f32, c: f32, d: f32 }, // microVolts
+    Theta { a: f32, b: f32, c: f32, d: f32 }, // microVolts
+    Batt { batt: i32 },
+    Horseshoe { a: f32, b: f32, c: f32, d: f32 },
+    TouchingForehead { touch: bool },
+    Blink { blink: bool },
+    JawClench { clench: bool },
+}
+
+#[derive(Clone, Debug)]
+pub struct MuseMessage {
+    pub time: Duration, // Since UNIX_EPOCH, the beginning of 1970
+    pub ip_address: SocketAddr,
+    pub muse_message_type: MuseMessageType,
+}
+
 /// Mose recently collected values from Muse EEG headset
 pub struct MuseModel {
     message_receive_time: Duration,
-    rx: osc::Receiver,
+    // rx: Option<T>,
     tx_eeg: Sender<(Duration, MuseMessageType)>,
     rx_eeg: Receiver<(Duration, MuseMessageType)>,
     clicked: bool,
@@ -59,59 +88,64 @@ pub struct MuseModel {
     pub display_type: DisplayType,
 }
 
-/// Create a new model for storing received values
-pub fn model() -> MuseModel {
-    let (tx_eeg, rx_eeg): (
-        Sender<(Duration, MuseMessageType)>,
-        Receiver<(Duration, MuseMessageType)>,
-    ) = mpsc::channel();
-
-    // Bind an `osc::Receiver` to a port.
-    let receiver = osc::receiver(PORT)
-        .expect("Can not bind to port- is another copy of this app already running?");
-
-    // let receiver_debug = ReceiverDebug { receiver: receiver };
-
-    info!("Creating model");
-
-    MuseModel {
-        message_receive_time: Duration::from_secs(0),
-        rx: receiver,
-        tx_eeg: tx_eeg,
-        rx_eeg: rx_eeg,
-        clicked: false,
-        clear_background: false,
-        accelerometer: [0.0, 0.0, 0.0],
-        gyro: [0.0, 0.0, 0.0],
-        alpha: [0.0, 0.0, 0.0, 0.0], // 7.5-13Hz
-        beta: [0.0, 0.0, 0.0, 0.0],  // 13-30Hz
-        gamma: [0.0, 0.0, 0.0, 0.0], // 30-44Hz
-        delta: [0.0, 0.0, 0.0, 0.0], // 1-4Hz
-        theta: [0.0, 0.0, 0.0, 0.0], // 4-8Hz
-        batt: 0,
-        horseshoe: [0.0, 0.0, 0.0, 0.0],
-        blink_countdown: 0,
-        touching_forehead_countdown: 0,
-        jaw_clench_countdown: 0,
-        scale: 1.5, // Make the circles relatively larger or smaller
-        display_type: DisplayType::Emotion, // Current drawing mode
-    }
-}
-
 impl MuseModel {
-    /// Receive any pending osc packets.
-    pub fn receive_packets(&mut self) {
-        let receivables: Vec<(nannou_osc::Packet, std::net::SocketAddr)> =
-            self.rx.try_iter().collect();
+    /// Create a new model for storing received values
+    pub fn new() -> MuseModel {
+        let (tx_eeg, rx_eeg): (
+            Sender<(Duration, MuseMessageType)>,
+            Receiver<(Duration, MuseMessageType)>,
+        ) = mpsc::channel();
 
-        for (packet, addr) in receivables {
-            let muse_messages = parse_muse_packet(addr, &packet);
+        info!("Creating model");
 
-            for muse_message in muse_messages {
-                self.handle_message(&muse_message);
-            }
+        // #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+        // let receiver = Some(
+        //     nannou_osc::receiver(PORT)
+        //         .expect("Can not bind to port- is another copy of this app already running?"),
+        // );
+
+        // #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+        // let receiver = None();
+
+        MuseModel {
+            message_receive_time: Duration::from_secs(0),
+            // rx: receiver,
+            rx_eeg,
+            tx_eeg,
+            clicked: false,
+            clear_background: false,
+            accelerometer: [0.0, 0.0, 0.0],
+            gyro: [0.0, 0.0, 0.0],
+            alpha: [0.0, 0.0, 0.0, 0.0], // 7.5-13Hz
+            beta: [0.0, 0.0, 0.0, 0.0],  // 13-30Hz
+            gamma: [0.0, 0.0, 0.0, 0.0], // 30-44Hz
+            delta: [0.0, 0.0, 0.0, 0.0], // 1-4Hz
+            theta: [0.0, 0.0, 0.0, 0.0], // 4-8Hz
+            batt: 0,
+            horseshoe: [0.0, 0.0, 0.0, 0.0],
+            blink_countdown: 0,
+            touching_forehead_countdown: 0,
+            jaw_clench_countdown: 0,
+            scale: 1.5, // Make the circles relatively larger or smaller
+            display_type: DisplayType::Emotion, // Current drawing mode
         }
     }
+
+    /// Receive any pending osc packets.
+    // pub fn receive_packets(&mut self) {
+    //     if let Some(receiver) = self.rx {
+    //         let receivables: Vec<(nannou_osc::Packet, std::net::SocketAddr)> =
+    //             receiver.try_iter().collect();
+
+    //         for (packet, addr) in receivables {
+    //             let muse_messages = parse_muse_packet(addr, &packet);
+
+    //             for muse_message in muse_messages {
+    //                 self.handle_message(&muse_message);
+    //             }
+    //         }
+    //     }
+    // }
 
     /// User has recently clamped their teeth, creating myoelectric interference so interrupting the EEG signal
     pub fn is_jaw_clench(&self) -> bool {
@@ -299,4 +333,20 @@ impl MuseModel {
             }
         }
     }
+}
+
+/// Pull new data from the OSC Socket (if there is one on this build target)
+pub fn osc_socket_receive(muse_model: &mut MuseModel) {
+    // if let Some(receiver) = muse_model.rx {
+    //     let receivables: Vec<(nannou_osc::Packet, std::net::SocketAddr)> =
+    //         receiver.try_iter().collect();
+
+    //     for (packet, addr) in receivables {
+    //         let muse_messages = parse_muse_packet(addr, &packet);
+
+    //         for muse_message in muse_messages {
+    //             muse_model.handle_message(&muse_message);
+    //         }
+    //     }
+    // }
 }

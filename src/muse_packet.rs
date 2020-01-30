@@ -1,33 +1,10 @@
+use crate::muse_model::{MuseMessage, MuseMessageType};
 /// Muse packets are received over an OSC protol USP socket from MindMonitor app
 /// running on Android on the same WIFI
 use log::*;
 use nannou_osc::*;
 use std::net::SocketAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
-#[derive(Clone, Debug)]
-pub struct MuseMessage {
-    pub time: Duration, // Since UNIX_EPOCH, the beginning of 1970
-    pub ip_address: SocketAddr,
-    pub muse_message_type: MuseMessageType,
-}
-
-#[derive(Clone, Debug)]
-pub enum MuseMessageType {
-    Eeg { a: f32, b: f32, c: f32, d: f32 }, // microVolts
-    Accelerometer { x: f32, y: f32, z: f32 },
-    Gyro { x: f32, y: f32, z: f32 },
-    Alpha { a: f32, b: f32, c: f32, d: f32 }, // microVolts
-    Beta { a: f32, b: f32, c: f32, d: f32 },  // microVolts
-    Gamma { a: f32, b: f32, c: f32, d: f32 }, // microVolts
-    Delta { a: f32, b: f32, c: f32, d: f32 }, // microVolts
-    Theta { a: f32, b: f32, c: f32, d: f32 }, // microVolts
-    Batt { batt: i32 },
-    Horseshoe { a: f32, b: f32, c: f32, d: f32 },
-    TouchingForehead { touch: bool },
-    Blink { blink: bool },
-    JawClench { clench: bool },
-}
 
 pub fn parse_muse_packet(addr: SocketAddr, packet: &Packet) -> Vec<MuseMessage> {
     let mut raw_messages = Vec::new();
