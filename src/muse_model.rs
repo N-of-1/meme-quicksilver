@@ -67,7 +67,7 @@ pub struct MuseMessage {
 /// Mose recently collected values from Muse EEG headset
 pub struct MuseModel {
     message_receive_time: Duration,
-    // rx: Option<T>,
+    pub rx: Option<osc::Receiver<osc::Unconnected>>,
     tx_eeg: Sender<(Duration, MuseMessageType)>,
     rx_eeg: Receiver<(Duration, MuseMessageType)>,
     clicked: bool,
@@ -98,18 +98,18 @@ impl MuseModel {
 
         info!("Creating model");
 
-        // #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-        // let receiver = Some(
-        //     nannou_osc::receiver(PORT)
-        //         .expect("Can not bind to port- is another copy of this app already running?"),
-        // );
+        #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+        let receiver: Option<osc::Receiver<osc::Unconnected>> = Some(
+            nannou_osc::receiver(PORT)
+                .expect("Can not bind to port- is another copy of this app already running?"),
+        );
 
-        // #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
-        // let receiver = None();
+        #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+        let receiver = None();
 
         MuseModel {
             message_receive_time: Duration::from_secs(0),
-            // rx: receiver,
+            rx: receiver,
             rx_eeg,
             tx_eeg,
             clicked: false,

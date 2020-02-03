@@ -124,7 +124,6 @@ const RECT_RIGHT_BUTTON: Rectangle = Rectangle {
     },
 };
 
-// Make sure this matches the `TARGET_PORT` in the `osc_sender.rs` example.
 const PORT: u16 = 34254;
 
 pub trait OscSocket: Sized {
