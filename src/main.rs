@@ -27,10 +27,8 @@ use quicksilver::{
     Future, Result,
 };
 
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-mod muse_packet;
-
 mod muse_model;
+mod muse_packet;
 mod view_circles;
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
@@ -184,6 +182,7 @@ impl State for AppState {
         let logo = Asset::new(Image::load(IMAGE_LOGO));
         let sound_click = Asset::new(Sound::load(SOUND_CLICK));
         let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
+        let (rx_eeg, muse_model) = muse_model::MuseModel::new();
 
         Ok(AppState {
             frame_count: 0,
@@ -194,7 +193,7 @@ impl State for AppState {
             sound_blah,
             left_button_color: COLOR_CLEAR,
             right_button_color: COLOR_CLEAR,
-            muse_model: muse_model::MuseModel::new(),
+            muse_model,
         })
     }
 
@@ -272,7 +271,7 @@ impl State for AppState {
             self.muse_model.display_type = DisplayType::Emotion;
         }
 
-        muse_model::osc_socket_receive(&mut self.muse_model);
+        self.muse_model.receive_packets();
         self.muse_model.count_down();
 
         Ok(())

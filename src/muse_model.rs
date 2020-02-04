@@ -1,11 +1,9 @@
-/// Muse data model and associated message handling from muse_packet
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use crate::muse_packet::*;
+/// Muse data model and associated message handling from muse_packet
+// #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::sync::mpsc::SendError;
 
 // use log::*;
-use std::fmt;
-// use std::fmt::Debug;
-use std::fmt::Formatter;
 use std::net::SocketAddr;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
@@ -58,15 +56,16 @@ pub struct MuseMessage {
     pub muse_message_type: MuseMessageType,
 }
 
-/// Receive messages from OSC UDP packets or (on the web)
+/// Receive messages of EEG data from some source (OSC or websockets)
 trait EegMessageReceiver {
     fn new() -> inner_receiver::InnerMessageReceiver;
+    fn receive_packets(&self) -> Vec<MuseMessage>;
 }
 
 /// An OSC USB packet receiver for all platforms except WASM
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 mod inner_receiver {
-    use super::EegMessageReceiver;
+    use super::{EegMessageReceiver, MuseMessage};
     use nannou_osc;
 
     // Make sure this matches the `TARGET_PORT` in the `osc_sender.rs` example.
@@ -85,6 +84,22 @@ mod inner_receiver {
 
             InnerMessageReceiver { receiver }
         }
+
+        /// Receive any pending osc packets.
+        fn receive_packets(&self) -> Vec<MuseMessage> {
+            let receivables: Vec<(nannou_osc::Packet, std::net::SocketAddr)> =
+                self.receiver.try_iter().collect();
+
+            let mut muse_messages: Vec<MuseMessage> = Vec::new();
+
+            for (packet, addr) in receivables {
+                let mut additional_messages: Vec<MuseMessage> =
+                    super::parse_muse_packet(addr, &packet);
+                muse_messages.append(&mut additional_messages);
+            }
+
+            muse_messages
+        }
     }
 }
 
@@ -98,21 +113,23 @@ mod inner_receiver {
 
     impl EegMessageReceiver for InnerMessageReceiver {
         fn new() -> InnerMessageReceiver {
-            info!("PLACEHOLDER: Indirectly connecting to EEG");
+            info!("PLACEHOLDER: Will be indirectly connecting to EEG");
 
             InnerMessageReceiver {}
+        }
+
+        /// Receive any pending osc packets.
+        fn receive_packets(&self) -> Vec<MuseMessage> {
+            Vec::new()
         }
     }
 }
 
-/// Mose recently collected values from Muse EEG headset
+/// Snapshot of the most recently collected values from Muse EEG headset
 pub struct MuseModel {
-    message_receive_time: Duration,
+    most_recent_message_receive_time: Duration,
     pub inner_receiver: inner_receiver::InnerMessageReceiver,
     tx_eeg: Sender<(Duration, MuseMessageType)>,
-    rx_eeg: Receiver<(Duration, MuseMessageType)>,
-    clicked: bool,
-    clear_background: bool,
     accelerometer: [f32; 3],
     gyro: [f32; 3],
     pub alpha: [f32; 4],
@@ -131,7 +148,7 @@ pub struct MuseModel {
 
 impl MuseModel {
     /// Create a new model for storing received values
-    pub fn new() -> MuseModel {
+    pub fn new() -> (Receiver<(Duration, MuseMessageType)>, MuseModel) {
         let (tx_eeg, rx_eeg): (
             Sender<(Duration, MuseMessageType)>,
             Receiver<(Duration, MuseMessageType)>,
@@ -139,45 +156,29 @@ impl MuseModel {
 
         let inner_receiver = inner_receiver::InnerMessageReceiver::new();
 
-        MuseModel {
-            message_receive_time: Duration::from_secs(0),
-            inner_receiver,
+        (
             rx_eeg,
-            tx_eeg,
-            clicked: false,
-            clear_background: false,
-            accelerometer: [0.0, 0.0, 0.0],
-            gyro: [0.0, 0.0, 0.0],
-            alpha: [0.0, 0.0, 0.0, 0.0], // 7.5-13Hz
-            beta: [0.0, 0.0, 0.0, 0.0],  // 13-30Hz
-            gamma: [0.0, 0.0, 0.0, 0.0], // 30-44Hz
-            delta: [0.0, 0.0, 0.0, 0.0], // 1-4Hz
-            theta: [0.0, 0.0, 0.0, 0.0], // 4-8Hz
-            batt: 0,
-            horseshoe: [0.0, 0.0, 0.0, 0.0],
-            blink_countdown: 0,
-            touching_forehead_countdown: 0,
-            jaw_clench_countdown: 0,
-            scale: 1.5, // Make the circles relatively larger or smaller
-            display_type: DisplayType::Emotion, // Current drawing mode
-        }
+            MuseModel {
+                most_recent_message_receive_time: Duration::from_secs(0),
+                inner_receiver,
+                tx_eeg,
+                accelerometer: [0.0, 0.0, 0.0],
+                gyro: [0.0, 0.0, 0.0],
+                alpha: [0.0, 0.0, 0.0, 0.0], // 7.5-13Hz
+                beta: [0.0, 0.0, 0.0, 0.0],  // 13-30Hz
+                gamma: [0.0, 0.0, 0.0, 0.0], // 30-44Hz
+                delta: [0.0, 0.0, 0.0, 0.0], // 1-4Hz
+                theta: [0.0, 0.0, 0.0, 0.0], // 4-8Hz
+                batt: 0,
+                horseshoe: [0.0, 0.0, 0.0, 0.0],
+                blink_countdown: 0,
+                touching_forehead_countdown: 0,
+                jaw_clench_countdown: 0,
+                scale: 1.5, // Make the circles relatively larger or smaller
+                display_type: DisplayType::Emotion, // Current drawing mode
+            },
+        )
     }
-
-    /// Receive any pending osc packets.
-    // pub fn receive_packets(&mut self) {
-    //     if let Some(receiver) = self.rx {
-    //         let receivables: Vec<(nannou_osc::Packet, std::net::SocketAddr)> =
-    //             receiver.try_iter().collect();
-
-    //         for (packet, addr) in receivables {
-    //             let muse_messages = parse_muse_packet(addr, &packet);
-
-    //             for muse_message in muse_messages {
-    //                 self.handle_message(&muse_message);
-    //             }
-    //         }
-    //     }
-    // }
 
     /// User has recently clamped their teeth, creating myoelectric interference so interrupting the EEG signal
     pub fn is_jaw_clench(&self) -> bool {
@@ -209,176 +210,107 @@ impl MuseModel {
         }
     }
 
+    pub fn receive_packets(&mut self) {
+        let muse_messages = self.inner_receiver.receive_packets();
+
+        for muse_message in muse_messages {
+            self.handle_message(&muse_message)
+                .expect("Could not send to internal receiver message");
+            self.most_recent_message_receive_time = muse_message.time;
+        }
+    }
+
     /// Update state based on an incoming message
-    pub fn handle_message(&mut self, muse_message: &MuseMessage) {
+    fn handle_message(
+        &mut self,
+        muse_message: &MuseMessage,
+    ) -> Result<(), SendError<(Duration, MuseMessageType)>> {
+        let time = muse_message.time;
+
         match muse_message.muse_message_type {
             MuseMessageType::Accelerometer { x, y, z } => {
                 self.accelerometer = [x, y, z];
                 self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::Accelerometer { x: x, y: y, z: z },
-                    ))
-                    .expect("Could not tx Accelerometer");
+                    .send((time, MuseMessageType::Accelerometer { x, y, z }))
             }
             MuseMessageType::Gyro { x, y, z } => {
                 self.gyro = [x, y, z];
-                self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::Gyro { x: x, y: y, z: z },
-                    ))
-                    .expect("Could not tx Gyro");
+                self.tx_eeg.send((time, MuseMessageType::Gyro { x, y, z }))
             }
             MuseMessageType::Horseshoe { a, b, c, d } => {
                 self.horseshoe = [a, b, c, d];
                 self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::Horseshoe {
-                            a: a,
-                            b: b,
-                            c: c,
-                            d: d,
-                        },
-                    ))
-                    .expect("Could not tx Horeshoe");
+                    .send((time, MuseMessageType::Horseshoe { a, b, c, d }))
             }
-            MuseMessageType::Eeg { a, b, c, d } => {
-                self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::Eeg {
-                            a: a,
-                            b: b,
-                            c: c,
-                            d: d,
-                        },
-                    ))
-                    .expect("Could not send tx Eeg");
-            }
+            MuseMessageType::Eeg { a, b, c, d } => self
+                .tx_eeg
+                .send((time, MuseMessageType::Eeg { a, b, c, d })),
             MuseMessageType::Alpha { a, b, c, d } => {
                 self.alpha = [a, b, c, d];
                 self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::Alpha {
-                            a: a,
-                            b: b,
-                            c: c,
-                            d: d,
-                        },
-                    ))
-                    .expect("Could not send tx Alpha");
+                    .send((time, MuseMessageType::Alpha { a, b, c, d }))
             }
             MuseMessageType::Beta { a, b, c, d } => {
                 self.beta = [a, b, c, d];
                 self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::Beta {
-                            a: a,
-                            b: b,
-                            c: c,
-                            d: d,
-                        },
-                    ))
-                    .expect("Could not send tx Beta");
+                    .send((time, MuseMessageType::Beta { a, b, c, d }))
             }
             MuseMessageType::Gamma { a, b, c, d } => {
                 self.gamma = [a, b, c, d];
                 self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::Gamma {
-                            a: a,
-                            b: b,
-                            c: c,
-                            d: d,
-                        },
-                    ))
-                    .expect("Could not send tx Gamma");
+                    .send((time, MuseMessageType::Gamma { a, b, c, d }))
             }
             MuseMessageType::Delta { a, b, c, d } => {
                 self.delta = [a, b, c, d];
                 self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::Delta {
-                            a: a,
-                            b: b,
-                            c: c,
-                            d: d,
-                        },
-                    ))
-                    .expect("Could not send tx Delta");
+                    .send((time, MuseMessageType::Delta { a, b, c, d }))
             }
             MuseMessageType::Theta { a, b, c, d } => {
                 self.theta = [a, b, c, d];
                 self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::Theta {
-                            a: a,
-                            b: b,
-                            c: c,
-                            d: d,
-                        },
-                    ))
-                    .expect("Could not send tx Theta");
+                    .send((time, MuseMessageType::Theta { a, b, c, d }))
             }
             MuseMessageType::Batt { batt } => {
                 self.batt = batt;
                 self.tx_eeg
-                    .send((muse_message.time, MuseMessageType::Batt { batt: batt }))
-                    .expect("Could not tx Batt");
+                    .send((muse_message.time, MuseMessageType::Batt { batt }))
             }
             MuseMessageType::TouchingForehead { touch } => {
                 if !touch {
                     self.touching_forehead_countdown = FOREHEAD_COUNTDOWN;
                 }
                 self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::TouchingForehead { touch: touch },
-                    ))
-                    .expect("Could not tx TouchingForehead");
+                    .send((time, MuseMessageType::TouchingForehead { touch }))
             }
             MuseMessageType::Blink { blink } => {
                 if blink {
                     self.blink_countdown = BLINK_COUNTDOWN;
                 }
-                self.tx_eeg
-                    .send((muse_message.time, MuseMessageType::Blink { blink: blink }))
-                    .expect("Could not tx Blink");
+                self.tx_eeg.send((time, MuseMessageType::Blink { blink }))
             }
             MuseMessageType::JawClench { clench } => {
                 if clench {
                     self.jaw_clench_countdown = CLENCH_COUNTDOWN;
                 }
                 self.tx_eeg
-                    .send((
-                        muse_message.time,
-                        MuseMessageType::JawClench { clench: clench },
-                    ))
-                    .expect("Could not tx Clench");
+                    .send((time, MuseMessageType::JawClench { clench }))
             }
         }
     }
 }
 
-/// Pull new data from the OSC Socket (if there is one on this build target)
-pub fn osc_socket_receive(muse_model: &mut MuseModel) {
-    // if let Some(receiver) = muse_model.rx {
-    //     let receivables: Vec<(nannou_osc::Packet, std::net::SocketAddr)> =
-    //         receiver.try_iter().collect();
+// Pull new data from the OSC Socket (if there is one on this build target)
+// pub fn osc_socket_receive(muse_model: &mut MuseModel) {
+// if let Some(receiver) = muse_model.rx {
+//     let receivables: Vec<(nannou_osc::Packet, std::net::SocketAddr)> =
+//         receiver.try_iter().collect();
 
-    //     for (packet, addr) in receivables {
-    //         let muse_messages = parse_muse_packet(addr, &packet);
+//     for (packet, addr) in receivables {
+//         let muse_messages = parse_muse_packet(addr, &packet);
 
-    //         for muse_message in muse_messages {
-    //             muse_model.handle_message(&muse_message);
-    //         }
-    //     }
-    // }
-}
+//         for muse_message in muse_messages {
+//             muse_model.handle_message(&muse_message);
+//         }
+//     }
+// }
+// }

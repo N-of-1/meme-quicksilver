@@ -2,9 +2,11 @@ use crate::muse_model::{MuseMessage, MuseMessageType};
 /// Muse packets are received over an OSC protol USP socket from MindMonitor app
 /// running on Android on the same WIFI
 use log::*;
-use nannou_osc::*;
 use std::net::SocketAddr;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use nannou_osc::*;
 
 pub fn parse_muse_packet(addr: SocketAddr, packet: &Packet) -> Vec<MuseMessage> {
     let mut raw_messages = Vec::new();
@@ -144,6 +146,7 @@ pub fn parse_muse_message_type(raw_message: Message) -> Option<MuseMessageType> 
     r
 }
 
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn get_float_from_args(i: usize, args: &Vec<Type>) -> f32 {
     let f = args.get(i).expect("Float was not provided");
 
@@ -153,6 +156,7 @@ fn get_float_from_args(i: usize, args: &Vec<Type>) -> f32 {
     }
 }
 
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn get_int_from_args(i: usize, args: &Vec<Type>) -> i32 {
     let j = args.get(i).expect("Int was not provided");
     match j {
