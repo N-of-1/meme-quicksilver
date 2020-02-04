@@ -26,6 +26,8 @@ use quicksilver::{
     sound::Sound,
     Future, Result,
 };
+use std::sync::mpsc::Receiver;
+use std::time::Duration;
 
 mod muse_model;
 mod view_circles;
@@ -140,6 +142,7 @@ struct AppState {
     left_button_color: Color,
     right_button_color: Color,
     muse_model: MuseModel,
+    rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
 }
 
 impl AppState {
@@ -196,6 +199,7 @@ impl State for AppState {
             left_button_color: COLOR_CLEAR,
             right_button_color: COLOR_CLEAR,
             muse_model,
+            rx_eeg,
         })
     }
 
