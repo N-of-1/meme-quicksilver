@@ -4,4 +4,4 @@ cargo web deploy
 rm ~/Sites/*
 cp ./target/deploy/* ~/Sites
 # open "http://localhost"
-open -a "Google Chrome" http://localhost
+open -a "Microsoft Edge" http://localhost

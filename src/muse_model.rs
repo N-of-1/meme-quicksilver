@@ -11,15 +11,9 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::Duration;
 
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-use nannou_osc as osc;
-
 const FOREHEAD_COUNTDOWN: i32 = 30; // 60th of a second counts
 const BLINK_COUNTDOWN: i32 = 30;
 const CLENCH_COUNTDOWN: i32 = 30;
-
-// Make sure this matches the `TARGET_PORT` in the `osc_sender.rs` example.
-const PORT: u16 = 34254;
 
 /// Make it easier to print out the message receiver object for debug purposes
 // struct ReceiverDebug<T> {
@@ -64,10 +58,57 @@ pub struct MuseMessage {
     pub muse_message_type: MuseMessageType,
 }
 
+/// Receive messages from OSC UDP packets or (on the web)
+trait EegMessageReceiver {
+    fn new() -> inner_receiver::InnerMessageReceiver;
+}
+
+/// An OSC USB packet receiver for all platforms except WASM
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+mod inner_receiver {
+    use super::EegMessageReceiver;
+    use nannou_osc;
+
+    // Make sure this matches the `TARGET_PORT` in the `osc_sender.rs` example.
+    const PORT: u16 = 34254;
+
+    pub struct InnerMessageReceiver {
+        receiver: nannou_osc::Receiver,
+    }
+
+    impl EegMessageReceiver for InnerMessageReceiver {
+        fn new() -> InnerMessageReceiver {
+            info!("Connecting to EEG");
+
+            let receiver = nannou_osc::receiver(PORT)
+                .expect("Can not bind to port- is another copy of this app already running?");
+
+            InnerMessageReceiver { receiver }
+        }
+    }
+}
+
+/// A placeholder structure for WASM to avoid dependency on non-existing package issues
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+mod inner_receiver {
+    use super::EegMessageReceiver;
+
+    /// TODO Receive messages from the server in the web implementation
+    pub struct InnerMessageReceiver {}
+
+    impl EegMessageReceiver for InnerMessageReceiver {
+        fn new() -> InnerMessageReceiver {
+            info!("PLACEHOLDER: Indirectly connecting to EEG");
+
+            InnerMessageReceiver {}
+        }
+    }
+}
+
 /// Mose recently collected values from Muse EEG headset
 pub struct MuseModel {
     message_receive_time: Duration,
-    pub rx: Option<osc::Receiver<osc::Unconnected>>,
+    pub inner_receiver: inner_receiver::InnerMessageReceiver,
     tx_eeg: Sender<(Duration, MuseMessageType)>,
     rx_eeg: Receiver<(Duration, MuseMessageType)>,
     clicked: bool,
@@ -96,20 +137,11 @@ impl MuseModel {
             Receiver<(Duration, MuseMessageType)>,
         ) = mpsc::channel();
 
-        info!("Creating model");
-
-        #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-        let receiver: Option<osc::Receiver<osc::Unconnected>> = Some(
-            nannou_osc::receiver(PORT)
-                .expect("Can not bind to port- is another copy of this app already running?"),
-        );
-
-        #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
-        let receiver = None();
+        let inner_receiver = inner_receiver::InnerMessageReceiver::new();
 
         MuseModel {
             message_receive_time: Duration::from_secs(0),
-            rx: receiver,
+            inner_receiver,
             rx_eeg,
             tx_eeg,
             clicked: false,
