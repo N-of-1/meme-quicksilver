@@ -28,8 +28,10 @@ use quicksilver::{
 };
 
 mod muse_model;
-mod muse_packet;
 mod view_circles;
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+mod muse_packet;
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 const SCREEN_SIZE: (f32, f32) = (1280.0, 768.0);

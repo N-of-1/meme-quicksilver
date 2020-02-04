@@ -1,3 +1,4 @@
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use crate::muse_packet::*;
 /// Muse data model and associated message handling from muse_packet
 // #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
@@ -106,7 +107,7 @@ mod inner_receiver {
 /// A placeholder structure for WASM to avoid dependency on non-existing package issues
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 mod inner_receiver {
-    use super::EegMessageReceiver;
+    use super::{EegMessageReceiver, MuseMessage};
 
     /// TODO Receive messages from the server in the web implementation
     pub struct InnerMessageReceiver {}

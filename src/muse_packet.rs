@@ -146,7 +146,6 @@ pub fn parse_muse_message_type(raw_message: Message) -> Option<MuseMessageType> 
     r
 }
 
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn get_float_from_args(i: usize, args: &Vec<Type>) -> f32 {
     let f = args.get(i).expect("Float was not provided");
 
@@ -156,7 +155,6 @@ fn get_float_from_args(i: usize, args: &Vec<Type>) -> f32 {
     }
 }
 
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn get_int_from_args(i: usize, args: &Vec<Type>) -> i32 {
     let j = args.get(i).expect("Int was not provided");
     match j {
