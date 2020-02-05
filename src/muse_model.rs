@@ -31,6 +31,7 @@ pub enum DisplayType {
     FourCircles,
     Dowsiness,
     Emotion,
+    EegValues,
 }
 
 #[derive(Clone, Debug)]

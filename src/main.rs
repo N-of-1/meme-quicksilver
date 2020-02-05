@@ -29,8 +29,8 @@ use quicksilver::{
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
+mod eeg_view;
 mod muse_model;
-mod view_circles;
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 mod muse_packet;
@@ -41,8 +41,8 @@ const SCREEN_SIZE: (f32, f32) = (1280.0, 768.0);
 const SCREEN_SIZE: (f32, f32) = (1280.0, 650.0);
 
 const FPS: u64 = 30;
-const FRAME_TITLE: u64 = 3 * FPS; // 30 frames/sec
-const FRAME_INTRO: u64 = FRAME_TITLE + 4 * FPS;
+const FRAME_TITLE: u64 = 1 * FPS; // 30 frames/sec
+const FRAME_INTRO: u64 = FRAME_TITLE + 1 * FPS;
 const FRAME_SETTLE: u64 = FRAME_INTRO + 12000 * FPS;
 const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
 
@@ -95,6 +95,8 @@ const COLOR_TEXT: Color = Color::BLACK;
 const COLOR_BUTTON: Color = COLOR_NOF1_DARK_BLUE;
 const COLOR_BUTTON_PRESSED: Color = COLOR_NOF1_LIGHT_BLUE;
 const COLOR_EMOTION: Color = Color::YELLOW;
+
+pub const EEG_LABELS: [&str; 5] = ["Α", "Β", "Γ", "Δ", "Θ"];
 
 const BUTTON_WIDTH: f32 = 200.0;
 const BUTTON_HEIGHT: f32 = 50.0;
@@ -179,7 +181,6 @@ impl State for AppState {
                 &FontStyle::new(FONT_EXTRA_BOLD_SIZE, COLOR_TITLE),
             ))
         }));
-
         let help_text = Asset::new(help_font.and_then(|font| {
             result(font.render(STR_HELP_TEXT, &FontStyle::new(FONT_MULI_SIZE, COLOR_TEXT)))
         }));
@@ -277,6 +278,11 @@ impl State for AppState {
             self.muse_model.display_type = DisplayType::Emotion;
         }
 
+        // F3
+        if window.keyboard()[Key::F4] == ButtonState::Pressed {
+            self.muse_model.display_type = DisplayType::EegValues;
+        }
+
         self.muse_model.receive_packets();
         self.muse_model.count_down();
 
@@ -337,7 +343,7 @@ impl State for AppState {
             })?;
             self.right_button_color = COLOR_BUTTON;
         } else if self.frame_count < FRAME_SETTLE {
-            view_circles::draw(&self.muse_model, window);
+            eeg_view::draw_view(&self.muse_model, window);
         } else if self.frame_count < FRAME_MEME {
             // LEFT BUTTON
             let left_color = self.left_button_color;
