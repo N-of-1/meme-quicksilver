@@ -52,6 +52,7 @@ const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
 const FONT_MULI: &str = "Muli.ttf";
 const FONT_EXTRA_BOLD_SIZE: f32 = 72.0;
 const FONT_MULI_SIZE: f32 = 40.0;
+const FONT_EEG_LABEL_SIZE: f32 = 22.0;
 
 const SOUND_CLICK: &str = "click.ogg";
 const SOUND_BLAH: &str = "blah.ogg";
@@ -91,12 +92,13 @@ const COLOR_NOF1_TURQOISE: Color = Color {
 };
 const COLOR_BACKGROUND: Color = COLOR_GREY;
 const COLOR_TITLE: Color = COLOR_NOF1_DARK_BLUE;
+const COLOR_EEG_LABEL: Color = Color::BLACK;
 const COLOR_TEXT: Color = Color::BLACK;
 const COLOR_BUTTON: Color = COLOR_NOF1_DARK_BLUE;
 const COLOR_BUTTON_PRESSED: Color = COLOR_NOF1_LIGHT_BLUE;
 const COLOR_EMOTION: Color = Color::YELLOW;
 
-pub const EEG_LABELS: [&str; 5] = ["Α", "Β", "Γ", "Δ", "Θ"];
+pub const EEG_LABELS: [&str; 5] = ["A", "B", "G", "D", "T"];
 
 const BUTTON_WIDTH: f32 = 200.0;
 const BUTTON_HEIGHT: f32 = 50.0;

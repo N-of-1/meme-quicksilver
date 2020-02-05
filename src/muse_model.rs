@@ -177,7 +177,7 @@ impl MuseModel {
                 touching_forehead_countdown: 0,
                 jaw_clench_countdown: 0,
                 scale: 1.5, // Make the circles relatively larger or smaller
-                display_type: DisplayType::Emotion, // Current drawing mode
+                display_type: DisplayType::EegValues, // Current drawing mode
             },
         )
     }
@@ -264,11 +264,13 @@ impl MuseModel {
             }
             MuseMessageType::Delta { a, b, c, d } => {
                 self.delta = [a, b, c, d];
+                // println!("Delta {} {} {} {}", a, b, c, d);
                 self.tx_eeg
                     .send((time, MuseMessageType::Delta { a, b, c, d }))
             }
             MuseMessageType::Theta { a, b, c, d } => {
                 self.theta = [a, b, c, d];
+                // println!("Theta {} {} {} {}", a, b, c, d);
                 self.tx_eeg
                     .send((time, MuseMessageType::Theta { a, b, c, d }))
             }
