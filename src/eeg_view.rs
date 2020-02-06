@@ -62,6 +62,7 @@ const N_EEG_CHANNELS: usize = 4;
 const FIRST_EEG_DERIVED_VALUE: usize = 0;
 const N_EEG_DERIVED_VALUES: usize = 5;
 const SPIDER_LINE_THICKNESS: f32 = 2.5; // Thickness of the line between points
+const SPIDER_LINE_AXIS_THICKNESS: f32 = 1.0; // Thickness of the axis labels
 const SPIDER_SPACING: f32 = 200.0; // How far apart the spider graphs are drawn
 const SPIDER_POINT_RADIUS: f32 = 10.0; // Size of the dot on each graph point
 const SPIDER_GRAPH_SCALE: f32 = 0.15; // Size of graph as % of screen size
@@ -253,25 +254,25 @@ fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
         })),
     ];
 
-    for i in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
-        spider_values[i][0] = muse_model.alpha[i];
-        spider_values[i][1] = muse_model.beta[i];
-        spider_values[i][2] = muse_model.gamma[i];
-        spider_values[i][3] = muse_model.delta[i];
-        spider_values[i][4] = muse_model.theta[i];
+    for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
+        spider_values[chan][0] = muse_model.alpha[chan];
+        spider_values[chan][1] = muse_model.beta[chan];
+        spider_values[chan][2] = muse_model.gamma[chan];
+        spider_values[chan][3] = muse_model.delta[chan];
+        spider_values[chan][4] = muse_model.theta[chan];
 
-        shift[i] = (
-            SPIDER_SPACING * (-PI / 4. + (i as f32 * PI / 2.).cos()),
-            SPIDER_SPACING * (-PI / 4. + (i as f32 * PI / 2.).sin()),
+        shift[chan] = (
+            SPIDER_SPACING * (-PI / 4. + (chan as f32 * PI / 2.).cos()),
+            SPIDER_SPACING * (-PI / 4. + (chan as f32 * PI / 2.).sin()),
         );
 
         draw_spider_graph(
             &mut graph_label_text,
             &EEG_COLORS,
-            spider_values[i],
+            spider_values[chan],
             window,
             SPIDER_GRAPH_SCALE,
-            shift[i],
+            shift[chan],
         );
     }
 }
@@ -287,30 +288,71 @@ fn draw_spider_graph(
 ) {
     let screen_size = window.screen_size();
     let scale = screen_size.x * graph_scale;
-    let mut radius = [0.0; 5];
-    let mut angle = [0.0; 5];
     let mut x = [[0.0; 5]; 4];
     let mut y = [[0.0; 5]; 4];
+    let mut angle = [0.0; 5];
 
     assert!(FIRST_EEG_CHANNEL <= N_EEG_CHANNELS);
     assert!(FIRST_EEG_DERIVED_VALUE <= N_EEG_DERIVED_VALUES);
     assert!(N_EEG_DERIVED_VALUES <= EEG_COLORS.len());
     assert!(N_EEG_DERIVED_VALUES <= EEG_LABELS.len());
 
-    // Draw lines between points on the spider graphs
+    for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
+        angle[val] = ((val as f32 * 2. * PI) - (PI / 2.))
+            / (N_EEG_DERIVED_VALUES - FIRST_EEG_DERIVED_VALUE) as f32;
+    }
+
+    // Calculate graph endpoints
     for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
         for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
-            radius[val] = scale * value[val];
-            angle[val] =
-                ((val as f32 * 2. * PI) - (PI / 2.)) / (N_EEG_CHANNELS - FIRST_EEG_CHANNEL) as f32;
-            x[chan][val] = (screen_size.x / 2.0) + radius[val] * angle[val].cos() as f32 + shift.0;
-            y[chan][val] = (screen_size.y / 2.0) + radius[val] * angle[val].sin() as f32 + shift.1;
+            let radius = scale * value[val];
+            let (xv, yv) =
+                end_of_spider_graph(val, radius, angle[val], shift, graph_scale, &screen_size);
+            x[chan][val] = xv;
+            y[chan][val] = yv;
         }
     }
 
+    // Draw axis lines for each spider graph
+    let axis_length = 150.0;
     for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
         for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
-            let wrap_val = ((val + 1) % N_EEG_DERIVED_VALUES) as usize;
+            // Draw from center to outside edge of spider graph
+            let center =
+                end_of_spider_graph(val, 0.0, angle[val], shift, graph_scale, &screen_size);
+            let tip = end_of_spider_graph(
+                val,
+                axis_length,
+                angle[val],
+                shift,
+                graph_scale,
+                &screen_size,
+            );
+            window.draw(
+                &Line::new(center, tip).with_thickness(SPIDER_LINE_AXIS_THICKNESS),
+                Col(COLOR_SPIDER_GRAPH),
+            );
+
+            // Draw outside border of spider graph
+            let tip2 = end_of_spider_graph(
+                wrap_eeg_derived_value_index(val),
+                axis_length,
+                angle[val],
+                shift,
+                graph_scale,
+                &screen_size,
+            );
+            window.draw(
+                &Line::new(tip, tip2).with_thickness(SPIDER_LINE_AXIS_THICKNESS),
+                Col(COLOR_SPIDER_GRAPH),
+            );
+        }
+    }
+
+    // Draw lines between all endpoints in each spider graph
+    for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
+        for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
+            let wrap_val = wrap_eeg_derived_value_index(val);
             window.draw(
                 &Line::new(
                     (x[chan][wrap_val], y[chan][wrap_val]),
@@ -322,6 +364,7 @@ fn draw_spider_graph(
         }
     }
 
+    // Label the endpoints
     for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
         for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
             // Draw the dot at each point on the spider graph
@@ -340,4 +383,26 @@ fn draw_spider_graph(
             });
         }
     }
+}
+
+// Find the index of the next value with wrap-around
+fn wrap_eeg_derived_value_index(i: usize) -> usize {
+    ((i + 1) % N_EEG_DERIVED_VALUES) as usize
+}
+
+// Find the screen location of a spider graph value
+fn end_of_spider_graph(
+    graph_number: usize,
+    radius: f32,
+    angle: f32,
+    shift: (f32, f32),
+    graph_scale: f32,
+    screen_size: &Vector,
+) -> (f32, f32) {
+    let scale = screen_size.x * graph_scale;
+
+    (
+        (screen_size.x / 2.0) + radius * angle.cos() as f32 + shift.0,
+        (screen_size.x / 2.0) + radius * angle.sin() as f32 + shift.1,
+    )
 }
