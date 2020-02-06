@@ -334,35 +334,36 @@ fn draw_spider_graph(
             );
 
             // Draw outside border of spider graph
-            let tip2 = end_of_spider_graph(
+            let wrap_val = wrap_eeg_derived_value_index(val);
+            let this_end_tip = end_of_spider_graph(
                 wrap_eeg_derived_value_index(val),
                 axis_length,
-                angle[val],
+                angle[wrap_val],
                 shift,
                 graph_scale,
                 &screen_size,
             );
             window.draw(
-                &Line::new(tip, tip2).with_thickness(SPIDER_LINE_AXIS_THICKNESS),
+                &Line::new(tip, this_end_tip).with_thickness(SPIDER_LINE_AXIS_THICKNESS),
                 Col(COLOR_SPIDER_GRAPH),
             );
         }
     }
 
     // Draw lines between all endpoints in each spider graph
-    for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
-        for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
-            let wrap_val = wrap_eeg_derived_value_index(val);
-            window.draw(
-                &Line::new(
-                    (x[chan][wrap_val], y[chan][wrap_val]),
-                    (x[chan][val], y[chan][val]),
-                )
-                .with_thickness(SPIDER_LINE_THICKNESS),
-                Col(COLOR_SPIDER_GRAPH),
-            );
-        }
-    }
+    // for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
+    //     for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
+    //         let wrap_val = wrap_eeg_derived_value_index(val);
+    //         window.draw(
+    //             &Line::new(
+    //                 (x[chan][wrap_val], y[chan][wrap_val]),
+    //                 (x[chan][val], y[chan][val]),
+    //             )
+    //             .with_thickness(SPIDER_LINE_THICKNESS),
+    //             Col(COLOR_SPIDER_GRAPH),
+    //         );
+    //     }
+    // }
 
     // Label the endpoints
     for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
