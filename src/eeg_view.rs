@@ -8,17 +8,6 @@ use quicksilver::{
     lifecycle::Window,
 };
 
-const LINE_WEIGHT: f32 = 10.0;
-const KEY_X: f32 = 600.0;
-const KEY_Y: f32 = -100.0;
-const KEY_VERT_SPACING: f32 = 30.0;
-
-const TEXT_ALPHA: &str = "Alpha";
-const TEXT_BETA: &str = "Beta";
-const TEXT_GAMMA: &str = "Gamma";
-const TEXT_DELTA: &str = "Delta";
-const TEXT_THETA: &str = "Theta";
-
 pub const COLOR_ALPHA: Color = Color {
     r: 178. / 256.,
     g: 178. / 256.,
@@ -56,6 +45,13 @@ pub const EEG_COLORS: [Color; 5] = [
     COLOR_DELTA,
     COLOR_THETA,
 ];
+pub const EEG_CHANNEL_LABELS: [&str; 4] = ["TP9", "AF7", "AF8", "TP10"];
+pub const EEG_CHANNEL_POSITIONS: [(f64, f64); 4] = [
+    (100.0, 100.0),
+    (200.0, 100.0),
+    (300.0, 100.0),
+    (400.0, 100.0),
+];
 const COLOR_SPIDER_GRAPH: Color = Color::WHITE;
 const FIRST_EEG_CHANNEL: usize = 0;
 const N_EEG_CHANNELS: usize = 4;
@@ -77,35 +73,29 @@ pub fn draw_view(muse_model: &MuseModel, window: &mut Window) {
     }
 }
 
-fn average_from_four_electrodes(x: &[f32; 4]) -> f32 {
-    (x[0] + x[1] + x[2] + x[3]) / 4.0
-}
-
-fn asymmetry(x: &[f32; 4], n: f32) -> f32 {
-    let base = std::f32::consts::E;
-    base.powf(x[1] / n - x[2] / n)
-}
-
 /// A bigger yellow circle indiates greater happiness. Maybe.
 fn draw_emotion_view(model: &MuseModel, window: &mut Window) {
-    let lizard_mind = average_from_four_electrodes(&model.theta);
-    let asymm = asymmetry(&model.alpha, lizard_mind);
+    // let global_theta = muse_model::average_from_four_electrodes(&model.theta);
+    // let asymm = super.valence(&model.alpha, &model.theta);
+    // let arousal_index = arousal_index(&model.theta, &model.alpha);
 
-    draw_polygon(&COLOR_EMOTION, asymm / 5.0, window, model.scale, (0.0, 0.0));
+    // //TODO Change this to Mandala display
+
+    // draw_polygon(&COLOR_EMOTION, asymm / 5.0, window, model.scale, (0.0, 0.0));
 }
 
 fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
-    let lizard_mind = (average_from_four_electrodes(&model.theta)
-        + average_from_four_electrodes(&model.delta))
-        / 2.0;
-    draw_polygon(&COLOR_THETA, lizard_mind, window, model.scale, (0.0, 0.0));
-    draw_polygon(
-        &COLOR_ALPHA,
-        average_from_four_electrodes(&model.alpha),
-        window,
-        model.scale,
-        (0.0, 0.0),
-    );
+    // let lizard_mind = (average_from_four_electrodes(&model.theta)
+    //     + average_from_four_electrodes(&model.delta))
+    //     / 2.0;
+    // draw_polygon(&COLOR_THETA, lizard_mind, window, model.scale, (0.0, 0.0));
+    // draw_polygon(
+    //     &COLOR_ALPHA,
+    //     average_from_four_electrodes(&model.alpha),
+    //     window,
+    //     model.scale,
+    //     (0.0, 0.0),
+    // );
 }
 
 fn draw_four_circles_view(model: &MuseModel, window: &mut Window) {
@@ -114,20 +104,6 @@ fn draw_four_circles_view(model: &MuseModel, window: &mut Window) {
     const RIGHT_FRONT: (f32, f32) = (DISTANCE, -DISTANCE);
     const RIGHT_REAR: (f32, f32) = (DISTANCE, DISTANCE);
     const LEFT_REAR: (f32, f32) = (-DISTANCE, DISTANCE);
-
-    // draw_key(0, "Blink", blink_color(model.is_blink()), &window);
-    // draw_key(1, "Jaw Clench", blink_color(model.is_jaw_clench()), &window);
-    // draw_key(
-    //     2,
-    //     "Forehead",
-    //     blink_color(model.is_touching_forehead()),
-    //     &window,
-    // );
-    // draw_key(3, TEXT_ALPHA, COLOR_ALPHA, &window);
-    // draw_key(4, TEXT_BETA, COLOR_BETA, &window);
-    // draw_key(5, TEXT_GAMMA, COLOR_GAMMA, &window);
-    // draw_key(6, TEXT_DELTA, COLOR_DELTA, &window);
-    // draw_key(7, TEXT_THETA, COLOR_THETA, &window);
 
     draw_concentric_polygons(&model, window, 0, LEFT_REAR);
     draw_concentric_polygons(&model, window, 1, LEFT_FRONT);
@@ -182,24 +158,6 @@ fn blink_color(blink: bool) -> Color {
 
 const RECT_KEY: (f32, f32) = (50.0, 10.0);
 
-// fn draw_key(i: i32, text: &str, &text: Asset<Image>, line_color: Color, window: &Window) {
-//     let y = KEY_Y - KEY_VERT_SPACING * i as f32;
-
-//     draw.rect().x(KEY_X).y(y).w(50.0).h(10.0).color(line_color);
-
-//     draw.text(text).x(KEY_X).y(y - 10.0);
-
-//     text.execute(|image| {
-//         window.draw(
-//             &image
-//                 .area()
-//                 .with_center((SCREEN_SIZE.0 / 2.0, TEXT_V_MARGIN)),
-//             Img(&image),
-//         );
-//         Ok(())
-//     })?;
-// }
-
 /// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
 fn draw_polygon(
     line_color: &Color,
@@ -217,11 +175,31 @@ fn draw_polygon(
     window.draw(&Circle::new((x, y), radius), Col(*line_color));
 }
 
+struct GraphLabel {
+    image: Asset<Image>,
+    position: (f64, f64),
+}
+
+impl GraphLabel {
+    fn new(text: String, position: (f64, f64)) -> Self {
+        let image = Asset::new(Font::load(FONT_MULI).and_then(move |font| {
+            result(font.render(&text, &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL)))
+        }));
+
+        Self { image, position }
+    }
+}
+
 /// A set of all EEG values displayed for diagnostic purposes
 fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
+    assert!(FIRST_EEG_CHANNEL <= N_EEG_CHANNELS);
+    assert!(FIRST_EEG_DERIVED_VALUE <= N_EEG_DERIVED_VALUES);
+    assert!(N_EEG_DERIVED_VALUES <= EEG_COLORS.len());
+    assert!(N_EEG_DERIVED_VALUES <= EEG_LABELS.len());
+
     let mut shift = [(0.0, 0.0); 4];
     let mut spider_values = [[0.0; 5]; 4];
-    let mut graph_label_text: [Asset<Image>; 5] = [
+    let mut axis_label: [Asset<Image>; 5] = [
         Asset::new(Font::load(FONT_MULI).and_then(|font| {
             result(font.render(
                 EEG_LABELS[0],
@@ -254,6 +232,13 @@ fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
         })),
     ];
 
+    let graph_label: [GraphLabel; 4] = [
+        GraphLabel::new(EEG_CHANNEL_LABELS[0].into(), (0.0, 0.0)),
+        GraphLabel::new(EEG_CHANNEL_LABELS[1].into(), (0.0, 0.0)),
+        GraphLabel::new(EEG_CHANNEL_LABELS[2].into(), (0.0, 0.0)),
+        GraphLabel::new(EEG_CHANNEL_LABELS[3].into(), (0.0, 0.0)),
+    ];
+
     for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
         spider_values[chan][0] = muse_model.alpha[chan];
         spider_values[chan][1] = muse_model.beta[chan];
@@ -267,7 +252,9 @@ fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
         );
 
         draw_spider_graph(
-            &mut graph_label_text,
+            EEG_CHANNEL_LABELS[chan],
+            chan,
+            &mut axis_label,
             &EEG_COLORS,
             spider_values[chan],
             window,
@@ -275,10 +262,14 @@ fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
             shift[chan],
         );
     }
+
+    // Draw current arousal and valence values
 }
 
 /// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
 fn draw_spider_graph(
+    label: &str,
+    chan: usize,
     label_images: &mut [Asset<Image>],
     line_color: &[Color],
     value: [f32; 5],
@@ -292,82 +283,67 @@ fn draw_spider_graph(
     let mut y = [[0.0; 5]; 4];
     let mut angle = [0.0; 5];
 
-    assert!(FIRST_EEG_CHANNEL <= N_EEG_CHANNELS);
-    assert!(FIRST_EEG_DERIVED_VALUE <= N_EEG_DERIVED_VALUES);
-    assert!(N_EEG_DERIVED_VALUES <= EEG_COLORS.len());
-    assert!(N_EEG_DERIVED_VALUES <= EEG_LABELS.len());
-
     for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
         angle[val] = ((val as f32 * 2. * PI) - (PI / 2.))
             / (N_EEG_DERIVED_VALUES - FIRST_EEG_DERIVED_VALUE) as f32;
     }
 
     // Calculate graph endpoints
-    for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
-        for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
-            let radius = scale * value[val];
-            let (xv, yv) =
-                end_of_spider_graph(val, radius, angle[val], shift, graph_scale, &screen_size);
-            x[chan][val] = xv;
-            y[chan][val] = yv;
-        }
+    for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
+        let radius = scale * value[val];
+        let (xv, yv) = end_of_spider_graph(radius, angle[val], shift, graph_scale, &screen_size);
+        x[chan][val] = xv;
+        y[chan][val] = yv;
     }
+
+    // Label the graph
+    // &label_images[val].execute(|image| {
+    //     window.draw(&image.area().with_center(label_position[chan]), Img(&image));
+    //     Ok(())
+    // });
 
     // Draw axis lines for each spider graph
     let axis_length = 150.0;
-    for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
-        for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
-            // Draw from center to outside edge of spider graph
-            let center =
-                end_of_spider_graph(val, 0.0, angle[val], shift, graph_scale, &screen_size);
-            let tip = end_of_spider_graph(
-                val,
-                axis_length,
-                angle[val],
-                shift,
-                graph_scale,
-                &screen_size,
-            );
-            window.draw(
-                &Line::new(center, tip).with_thickness(SPIDER_LINE_AXIS_THICKNESS),
-                Col(COLOR_SPIDER_GRAPH),
-            );
+    for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
+        // Draw from center to outside edge of spider graph
+        let center = end_of_spider_graph(0.0, angle[val], shift, graph_scale, &screen_size);
+        let tip = end_of_spider_graph(axis_length, angle[val], shift, graph_scale, &screen_size);
+        window.draw(
+            &Line::new(center, tip).with_thickness(SPIDER_LINE_AXIS_THICKNESS),
+            Col(COLOR_SPIDER_GRAPH),
+        );
 
-            // Draw outside border of spider graph
-            let wrap_val = wrap_eeg_derived_value_index(val);
-            let next_spoke_tip = end_of_spider_graph(
-                wrap_eeg_derived_value_index(val),
-                axis_length,
-                angle[wrap_val],
-                shift,
-                graph_scale,
-                &screen_size,
-            );
-            window.draw(
-                &Line::new(tip, next_spoke_tip).with_thickness(SPIDER_LINE_AXIS_THICKNESS),
-                Col(COLOR_SPIDER_GRAPH),
-            );
-        }
+        // Draw outside border of spider graph
+        let wrap_val = wrap_eeg_derived_value_index(val);
+        let next_spoke_tip = end_of_spider_graph(
+            axis_length,
+            angle[wrap_val],
+            shift,
+            graph_scale,
+            &screen_size,
+        );
+        window.draw(
+            &Line::new(tip, next_spoke_tip).with_thickness(SPIDER_LINE_AXIS_THICKNESS),
+            Col(COLOR_SPIDER_GRAPH),
+        );
     }
 
     // Label the endpoints
-    for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
-        for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
-            // Draw the dot at each point on the spider graph
-            window.draw(
-                &Circle::new((x[chan][val], y[chan][val]), SPIDER_POINT_RADIUS),
-                Col(line_color[val]),
-            );
+    for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
+        // Draw the dot at each point on the spider graph
+        window.draw(
+            &Circle::new((x[chan][val], y[chan][val]), SPIDER_POINT_RADIUS),
+            Col(line_color[val]),
+        );
 
-            // Draw the label over the dot
-            &label_images[val].execute(|image| {
-                window.draw(
-                    &image.area().with_center((x[chan][val], y[chan][val])),
-                    Img(&image),
-                );
-                Ok(())
-            });
-        }
+        // Draw the label over the dot
+        &label_images[val].execute(|image| {
+            window.draw(
+                &image.area().with_center((x[chan][val], y[chan][val])),
+                Img(&image),
+            );
+            Ok(())
+        });
     }
 }
 
@@ -378,15 +354,12 @@ fn wrap_eeg_derived_value_index(i: usize) -> usize {
 
 // Find the screen location of a spider graph value
 fn end_of_spider_graph(
-    graph_number: usize,
     radius: f32,
     angle: f32,
     shift: (f32, f32),
     graph_scale: f32,
     screen_size: &Vector,
 ) -> (f32, f32) {
-    let scale = screen_size.x * graph_scale;
-
     (
         (screen_size.x / 2.0) + radius * angle.cos() as f32 + shift.0,
         (screen_size.x / 2.0) + radius * angle.sin() as f32 + shift.1,
@@ -405,3 +378,29 @@ mod tests {
         assert_eq!(next_i, wrap_eeg_derived_value_index(i));
     }
 }
+
+// Measure for 1 minute, "calibration"
+// Store max and min and standard deviaition and mean, for assymetry and arrousal
+// Compute the assymetry and scale those
+// TODO: check the assymetry calculation, mean and standard deviation
+// TODO: add the arousal calculation
+// 650 pixel high images of complete mandala
+// "Arousal" is 5 points, 10 PNG images -> Ivan
+// "Valence" is 12 points, 10 PNG images -> Ivan
+// "CenterImage" -> Ivan
+// Draw valence first. Opaque or translucent -> Paul
+// 2min "NegativeSequence" means 25 images per sequence
+// 2min   "Breathing exercise"
+//        Scale manadla up and down with fixed time for breathing
+//        "Now breathe with the mandala"
+//         P1 seconds pause
+//         X1 seconds in
+//         P2 seconds pause
+//         X2 seconds out
+// 2min "PositiveSequence" means 25 images per sequence
+//         Randomize the order (nice to have)
+// 2min "FreeRide" - Try to control the mandala
+// ExitScreen - "Thank You"
+//         Tweetable image, check the script
+// Break between images 1-2.5sec (random)
+// Show image 5 seconds

@@ -13,6 +13,11 @@ use std::time::Duration;
 const FOREHEAD_COUNTDOWN: i32 = 30; // 60th of a second counts
 const BLINK_COUNTDOWN: i32 = 30;
 const CLENCH_COUNTDOWN: i32 = 30;
+const HISTORY_LENGTH: usize = 60000; // Used to trunacte ArousalHistory and ValenceHistory
+const TP9: usize = 0; // Muse measurment array index for first electrode
+const AF7: usize = 1; // Muse measurment array index for second electrode
+const AF8: usize = 2; // Muse measurment array index for third electrode
+const TP10: usize = 3; // Muse measurment array index for fourth electrode
 
 /// Make it easier to print out the message receiver object for debug purposes
 // struct ReceiverDebug<T> {
@@ -127,6 +132,32 @@ mod inner_receiver {
     }
 }
 
+pub struct NormalizedValue {
+    current: f32,
+    mean: Option<f32>,
+    deviation: Option<f32>,
+}
+
+impl NormalizedValue {
+    fn new() -> Self {
+        Self {
+            current: 0.0,
+            mean: None,
+            deviation: None,
+        }
+    }
+
+    // Return the current value normalized based on the initial calibration period
+    pub fn normalized_value(&self) -> Option<f32> {
+        let mean_and_deviation = (self.mean, self.deviation);
+
+        match mean_and_deviation {
+            (Some(mean), Some(deviation)) => Some((self.current - mean) / deviation),
+            _ => None,
+        }
+    }
+}
+
 /// Snapshot of the most recently collected values from Muse EEG headset
 pub struct MuseModel {
     most_recent_message_receive_time: Duration,
@@ -146,6 +177,44 @@ pub struct MuseModel {
     jaw_clench_countdown: i32,
     pub scale: f32,
     pub display_type: DisplayType,
+    arousal_history: Vec<f32>,
+    valence_history: Vec<f32>,
+    pub arousal: NormalizedValue,
+    pub valence: NormalizedValue,
+}
+
+fn std_deviation(data: &Vec<f32>) -> Option<f32> {
+    match (mean(data), data.len()) {
+        (Some(data_mean), count) if count > 0 => {
+            let variance = data
+                .iter()
+                .map(|value| {
+                    let diff = data_mean - (*value as f32);
+
+                    diff * diff
+                })
+                .sum::<f32>()
+                / count as f32;
+
+            Some(variance.sqrt())
+        }
+        _ => None,
+    }
+}
+
+fn mean(data: &Vec<f32>) -> Option<f32> {
+    let sum: f32 = data.iter().sum();
+    let count = data.len();
+
+    match count {
+        positive if positive > 0 => Some(sum / count as f32),
+        _ => None,
+    }
+}
+
+/// Average the raw values
+fn average_from_four_electrodes(x: &[f32; 4]) -> f32 {
+    (x[0] + x[1] + x[2] + x[3]) / 4.0
 }
 
 impl MuseModel {
@@ -157,6 +226,8 @@ impl MuseModel {
         ) = mpsc::channel();
 
         let inner_receiver = inner_receiver::InnerMessageReceiver::new();
+        let arousal_history = Vec::new();
+        let valence_history = Vec::new();
 
         (
             rx_eeg,
@@ -178,6 +249,10 @@ impl MuseModel {
                 jaw_clench_countdown: 0,
                 scale: 1.5, // Make the circles relatively larger or smaller
                 display_type: DisplayType::EegValues, // Current drawing mode
+                arousal_history,
+                valence_history,
+                arousal: NormalizedValue::new(),
+                valence: NormalizedValue::new(),
             },
         )
     }
@@ -214,11 +289,68 @@ impl MuseModel {
 
     pub fn receive_packets(&mut self) {
         let muse_messages = self.inner_receiver.receive_packets();
+        let mut valid_values = false;
 
         for muse_message in muse_messages {
-            self.handle_message(&muse_message)
-                .expect("Could not send to internal receiver message");
+            valid_values = valid_values
+                || self
+                    .handle_message(&muse_message)
+                    .expect("Could not send to internal receiver message");
             self.most_recent_message_receive_time = muse_message.time;
+        }
+
+        if valid_values {
+            self.update_arousal();
+            self.update_valence();
+            //            println!("Alpha: {}       Theta: {}", self.alpha[1], self.theta[1]);
+            println!(
+                "Abs Valence: {}       Abs Arousal: {}",
+                self.valence.current, self.arousal.current
+            );
+            if let (Some(valence), Some(arousal)) = (
+                self.valence.normalized_value(),
+                self.arousal.normalized_value(),
+            ) {
+                println!("Valence: {}       Arousal: {}", valence, arousal);
+            }
+        }
+    }
+
+    /// Front assymetry- higher values mean more positive mood
+    fn front_assymetry(&self) -> f32 {
+        let base = std::f32::consts::E;
+        base.powf(self.alpha[AF7] - self.alpha[AF8])
+    }
+
+    fn valence(&self) -> f32 {
+        self.front_assymetry() / average_from_four_electrodes(&self.theta)
+    }
+
+    /// Level of emotional intensity
+    fn arousal(&self) -> f32 {
+        (self.alpha[TP9] + self.alpha[TP10]) / (self.theta[TP9] + self.theta[AF7])
+    }
+
+    /// Calculate the current arousal value and add it to the length-limited history
+    pub fn update_arousal(&mut self) {
+        let a = self.arousal();
+
+        self.arousal.current = a;
+        if self.valence_history.len() < HISTORY_LENGTH {
+            self.arousal_history.push(self.arousal.current);
+            self.arousal.mean = mean(&self.arousal_history);
+            self.arousal.deviation = std_deviation(&self.arousal_history);
+        }
+    }
+
+    /// Calculate the current valence value and add it to the length-limited history
+    pub fn update_valence(&mut self) {
+        self.valence.current = self.valence();
+
+        if self.valence_history.len() < HISTORY_LENGTH {
+            self.valence_history.push(self.valence.current);
+            self.valence.mean = mean(&self.valence_history);
+            self.valence.deviation = std_deviation(&self.valence_history);
         }
     }
 
@@ -226,78 +358,92 @@ impl MuseModel {
     fn handle_message(
         &mut self,
         muse_message: &MuseMessage,
-    ) -> Result<(), SendError<(Duration, MuseMessageType)>> {
+    ) -> Result<bool, SendError<(Duration, MuseMessageType)>> {
         let time = muse_message.time;
 
         match muse_message.muse_message_type {
             MuseMessageType::Accelerometer { x, y, z } => {
                 self.accelerometer = [x, y, z];
                 self.tx_eeg
-                    .send((time, MuseMessageType::Accelerometer { x, y, z }))
+                    .send((time, MuseMessageType::Accelerometer { x, y, z }));
+                Ok(false)
             }
             MuseMessageType::Gyro { x, y, z } => {
                 self.gyro = [x, y, z];
-                self.tx_eeg.send((time, MuseMessageType::Gyro { x, y, z }))
+                self.tx_eeg.send((time, MuseMessageType::Gyro { x, y, z }));
+                Ok(false)
             }
             MuseMessageType::Horseshoe { a, b, c, d } => {
                 self.horseshoe = [a, b, c, d];
                 self.tx_eeg
-                    .send((time, MuseMessageType::Horseshoe { a, b, c, d }))
+                    .send((time, MuseMessageType::Horseshoe { a, b, c, d }));
+                Ok(false)
             }
-            MuseMessageType::Eeg { a, b, c, d } => self
-                .tx_eeg
-                .send((time, MuseMessageType::Eeg { a, b, c, d })),
+            MuseMessageType::Eeg { a, b, c, d } => {
+                self.tx_eeg
+                    .send((time, MuseMessageType::Eeg { a, b, c, d }));
+                Ok(false)
+            }
             MuseMessageType::Alpha { a, b, c, d } => {
                 self.alpha = [a, b, c, d];
                 self.tx_eeg
-                    .send((time, MuseMessageType::Alpha { a, b, c, d }))
+                    .send((time, MuseMessageType::Alpha { a, b, c, d }));
+                Ok(true)
             }
             MuseMessageType::Beta { a, b, c, d } => {
                 self.beta = [a, b, c, d];
                 self.tx_eeg
-                    .send((time, MuseMessageType::Beta { a, b, c, d }))
+                    .send((time, MuseMessageType::Beta { a, b, c, d }));
+                Ok(true)
             }
             MuseMessageType::Gamma { a, b, c, d } => {
                 self.gamma = [a, b, c, d];
                 self.tx_eeg
-                    .send((time, MuseMessageType::Gamma { a, b, c, d }))
+                    .send((time, MuseMessageType::Gamma { a, b, c, d }));
+                Ok(true)
             }
             MuseMessageType::Delta { a, b, c, d } => {
                 self.delta = [a, b, c, d];
                 // println!("Delta {} {} {} {}", a, b, c, d);
                 self.tx_eeg
-                    .send((time, MuseMessageType::Delta { a, b, c, d }))
+                    .send((time, MuseMessageType::Delta { a, b, c, d }));
+                Ok(true)
             }
             MuseMessageType::Theta { a, b, c, d } => {
                 self.theta = [a, b, c, d];
                 // println!("Theta {} {} {} {}", a, b, c, d);
                 self.tx_eeg
-                    .send((time, MuseMessageType::Theta { a, b, c, d }))
+                    .send((time, MuseMessageType::Theta { a, b, c, d }));
+                Ok(true)
             }
             MuseMessageType::Batt { batt } => {
                 self.batt = batt;
                 self.tx_eeg
-                    .send((muse_message.time, MuseMessageType::Batt { batt }))
+                    .send((muse_message.time, MuseMessageType::Batt { batt }));
+                Ok(false)
             }
             MuseMessageType::TouchingForehead { touch } => {
                 if !touch {
                     self.touching_forehead_countdown = FOREHEAD_COUNTDOWN;
                 }
                 self.tx_eeg
-                    .send((time, MuseMessageType::TouchingForehead { touch }))
+                    .send((time, MuseMessageType::TouchingForehead { touch }));
+                Ok(false)
             }
             MuseMessageType::Blink { blink } => {
                 if blink {
                     self.blink_countdown = BLINK_COUNTDOWN;
                 }
-                self.tx_eeg.send((time, MuseMessageType::Blink { blink }))
+                self.tx_eeg.send((time, MuseMessageType::Blink { blink }));
+                Ok(false)
             }
             MuseMessageType::JawClench { clench } => {
                 if clench {
                     self.jaw_clench_countdown = CLENCH_COUNTDOWN;
                 }
                 self.tx_eeg
-                    .send((time, MuseMessageType::JawClench { clench }))
+                    .send((time, MuseMessageType::JawClench { clench }));
+                Ok(false)
             }
         }
     }

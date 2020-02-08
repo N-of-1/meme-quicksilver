@@ -108,6 +108,8 @@ const BUTTON_V_MARGIN: f32 = 20.0;
 const TITLE_V_MARGIN: f32 = 40.0;
 const TEXT_V_MARGIN: f32 = 200.0;
 
+const OSC_PORT: u16 = 34254; // Incoming Muse OSC UDP packets
+
 const RECT_LEFT_BUTTON: Rectangle = Rectangle {
     pos: Vector {
         x: BUTTON_H_MARGIN,
@@ -129,8 +131,6 @@ const RECT_RIGHT_BUTTON: Rectangle = Rectangle {
         y: BUTTON_HEIGHT,
     },
 };
-
-const PORT: u16 = 34254;
 
 pub trait OscSocket: Sized {
     fn osc_socket_receive();
@@ -280,7 +280,7 @@ impl State for AppState {
             self.muse_model.display_type = DisplayType::Emotion;
         }
 
-        // F3
+        // F4
         if window.keyboard()[Key::F4] == ButtonState::Pressed {
             self.muse_model.display_type = DisplayType::EegValues;
         }
