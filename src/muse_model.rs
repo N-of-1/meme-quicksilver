@@ -1,19 +1,21 @@
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use crate::muse_packet::*;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::iter::{Map, Sum};
 /// Muse data model and associated message handling from muse_packet
 // #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::sync::mpsc::SendError;
 
 // use log::*;
+use num_traits::float::Float;
 use std::net::SocketAddr;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
-use std::time::Duration;
+use std::{convert::From, time::Duration};
 
 const FOREHEAD_COUNTDOWN: i32 = 30; // 60th of a second counts
 const BLINK_COUNTDOWN: i32 = 30;
 const CLENCH_COUNTDOWN: i32 = 30;
-const HISTORY_LENGTH: usize = 60000; // Used to trunacte ArousalHistory and ValenceHistory
+const HISTORY_LENGTH: usize = 1000; // Used to trunacte ArousalHistory and ValenceHistory length - this is the number of samples in the normalization phase
 const TP9: usize = 0; // Muse measurment array index for first electrode
 const AF7: usize = 1; // Muse measurment array index for second electrode
 const AF8: usize = 2; // Muse measurment array index for third electrode
@@ -134,23 +136,58 @@ mod inner_receiver {
     }
 }
 
-pub struct NormalizedValue {
-    current: f32,
-    mean: Option<f32>,
-    deviation: Option<f32>,
+pub struct NormalizedValue<T: Float> {
+    current: T,
+    min: T,
+    max: T,
+    mean: Option<T>,
+    deviation: Option<T>,
+    history: Vec<T>,
 }
 
-impl NormalizedValue {
-    fn new() -> Self {
+impl<T> NormalizedValue<T>
+where
+    T: Float + From<i16>,
+{
+    pub fn new() -> Self {
         Self {
-            current: 0.0,
+            current: 0.into(),
+            min: T::max_value(),
+            max: T::min_value(),
             mean: None,
             deviation: None,
+            history: Vec::new(),
         }
     }
 
+    // Set the value if it is a change and a rational number
+    pub fn set(&mut self, val: T) -> bool {
+        let acceptable_new_value = val.is_finite() && val != self.current;
+
+        if acceptable_new_value {
+            self.current = val;
+            if val > self.max {
+                self.max = val;
+            }
+            if val < self.min {
+                self.min = val;
+            }
+            self.history.push(val);
+            if self.history.len() < HISTORY_LENGTH {
+                self.mean = mean(&self.history);
+                self.deviation = std_deviation(&self.history, self.mean);
+            }
+        }
+
+        acceptable_new_value
+    }
+
+    pub fn percent_normalization_complete(&self) -> f32 {
+        self.history.len() as f32 / HISTORY_LENGTH as f32
+    }
+
     // Return the current value normalized based on the initial calibration period
-    pub fn normalized_value(&self) -> Option<f32> {
+    pub fn normalized_value(&self) -> Option<T> {
         let mean_and_deviation = (self.mean, self.deviation);
 
         match mean_and_deviation {
@@ -179,37 +216,55 @@ pub struct MuseModel {
     jaw_clench_countdown: i32,
     pub scale: f32,
     pub display_type: DisplayType,
-    arousal_history: Vec<f32>,
-    valence_history: Vec<f32>,
-    pub arousal: NormalizedValue,
-    pub valence: NormalizedValue,
+    pub arousal: NormalizedValue<f32>,
+    pub valence: NormalizedValue<f32>,
 }
 
-fn std_deviation(data: &Vec<f32>) -> Option<f32> {
-    match (mean(data), data.len()) {
+fn std_deviation<T>(data: &Vec<T>, mean: Option<T>) -> Option<T>
+where
+    T: Float + From<i16>,
+{
+    match (mean, data.len()) {
         (Some(data_mean), count) if count > 0 => {
-            let variance = data
+            let squared_difference_vec: Vec<T> = data
                 .iter()
                 .map(|value| {
-                    let diff = data_mean - (*value as f32);
+                    let diff = data_mean - (*value as T);
 
                     diff * diff
                 })
-                .sum::<f32>()
-                / count as f32;
+                .collect();
 
-            Some(variance.sqrt())
+            let variance_sum = sum(&squared_difference_vec) / (count as i16).into();
+
+            Some(variance_sum.sqrt())
         }
         _ => None,
     }
 }
 
-fn mean(data: &Vec<f32>) -> Option<f32> {
-    let sum: f32 = data.iter().sum();
-    let count = data.len();
+fn sum<T>(data: &Vec<T>) -> T
+where
+    T: Float + From<i16>,
+{
+    let mut sum: T = 0.into();
+
+    for t in data {
+        sum = sum + *t;
+    }
+
+    sum
+}
+
+fn mean<T>(data: &Vec<T>) -> Option<T>
+where
+    T: Float + From<i16>,
+{
+    let count = data.len() as i16;
+    let sum = sum(data);
 
     match count {
-        positive if positive > 0 => Some(sum / count as f32),
+        positive if positive > 0 => Some(sum / count.into()),
         _ => None,
     }
 }
@@ -226,8 +281,6 @@ impl MuseModel {
             mpsc::channel();
 
         let inner_receiver = inner_receiver::InnerMessageReceiver::new();
-        let arousal_history = Vec::new();
-        let valence_history = Vec::new();
 
         (
             rx_eeg,
@@ -249,8 +302,6 @@ impl MuseModel {
                 jaw_clench_countdown: 0,
                 scale: 1.5, // Make the circles relatively larger or smaller
                 display_type: DisplayType::EegValues, // Current drawing mode
-                arousal_history,
-                valence_history,
                 arousal: NormalizedValue::new(),
                 valence: NormalizedValue::new(),
             },
@@ -289,29 +340,30 @@ impl MuseModel {
 
     pub fn receive_packets(&mut self) {
         let muse_messages = self.inner_receiver.receive_packets();
-        let mut valid_values = false;
+        let mut updated_numeric_values = false;
 
         for muse_message in muse_messages {
-            valid_values = valid_values
+            updated_numeric_values = updated_numeric_values
                 || self
                     .handle_message(&muse_message)
-                    .expect("Could not send to internal receiver message");
+                    .expect("Could not receive OSC message");
             self.most_recent_message_receive_time = muse_message.time;
         }
 
-        if valid_values {
+        if updated_numeric_values {
             self.update_arousal();
             self.update_valence();
-            //            println!("Alpha: {}       Theta: {}", self.alpha[1], self.theta[1]);
             println!(
-                "Abs Valence: {}       Abs Arousal: {}",
-                self.valence.current, self.arousal.current
+                "%Normalized {}   Abs Valence: {}       Abs Arousal: {}",
+                self.valence.percent_normalization_complete(),
+                self.valence.current,
+                self.arousal.current
             );
             if let (Some(valence), Some(arousal)) = (
                 self.valence.normalized_value(),
                 self.arousal.normalized_value(),
             ) {
-                println!("Valence: {}       Arousal: {}", valence, arousal);
+                println!("  N Valence: {}       Arousal: {}", valence, arousal);
             }
         }
     }
@@ -322,36 +374,28 @@ impl MuseModel {
         base.powf(self.alpha[AF7] - self.alpha[AF8])
     }
 
-    fn valence(&self) -> f32 {
+    /// Positive-negative balance of emotion
+    fn absolute_valence(&self) -> f32 {
         self.front_assymetry() / average_from_four_electrodes(&self.theta)
     }
 
     /// Level of emotional intensity
-    fn arousal(&self) -> f32 {
+    fn abolute_arousal(&self) -> f32 {
         (self.alpha[TP9] + self.alpha[TP10]) / (self.theta[TP9] + self.theta[AF7])
     }
 
     /// Calculate the current arousal value and add it to the length-limited history
-    pub fn update_arousal(&mut self) {
-        let a = self.arousal();
+    pub fn update_arousal(&mut self) -> bool {
+        let a = self.abolute_arousal();
 
-        self.arousal.current = a;
-        if self.valence_history.len() < HISTORY_LENGTH {
-            self.arousal_history.push(self.arousal.current);
-            self.arousal.mean = mean(&self.arousal_history);
-            self.arousal.deviation = std_deviation(&self.arousal_history);
-        }
+        self.arousal.set(a)
     }
 
     /// Calculate the current valence value and add it to the length-limited history
-    pub fn update_valence(&mut self) {
-        self.valence.current = self.valence();
+    pub fn update_valence(&mut self) -> bool {
+        let v = self.absolute_valence();
 
-        if self.valence_history.len() < HISTORY_LENGTH {
-            self.valence_history.push(self.valence.current);
-            self.valence.mean = mean(&self.valence_history);
-            self.valence.deviation = std_deviation(&self.valence_history);
-        }
+        self.valence.set(v)
     }
 
     fn send(&self, timed_muse_message: TimedMuseMessage) {

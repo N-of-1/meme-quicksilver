@@ -11,6 +11,7 @@ extern crate web_logger;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 extern crate nannou_osc;
 
+extern crate num_traits;
 extern crate quicksilver;
 
 #[macro_use]
