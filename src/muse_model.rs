@@ -79,7 +79,6 @@ mod inner_receiver {
     use super::{EegMessageReceiver, MuseMessage};
     use nannou_osc;
 
-    // Make sure this matches the `TARGET_PORT` in the `osc_sender.rs` example.
     const PORT: u16 = 34254;
 
     pub struct InnerMessageReceiver {

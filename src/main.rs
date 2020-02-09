@@ -21,7 +21,7 @@ use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
     combinators::result,
     geom::{Line, Rectangle, Shape, Vector},
-    graphics::{Background::Col, Background::Img, Color, Font, FontStyle, Image, ResizeStrategy},
+    graphics::{Background::Col, Background::Img, Color, Font, FontStyle, Image},
     input::{ButtonState, GamepadButton, Key, MouseButton},
     lifecycle::{run, Asset, Event, Settings, State, Window},
     sound::Sound,
@@ -53,7 +53,7 @@ const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
 const FONT_MULI: &str = "Muli.ttf";
 const FONT_EXTRA_BOLD_SIZE: f32 = 72.0;
 const FONT_MULI_SIZE: f32 = 40.0;
-const FONT_EEG_LABEL_SIZE: f32 = 22.0;
+const FONT_EEG_LABEL_SIZE: f32 = 30.0;
 
 const SOUND_CLICK: &str = "click.ogg";
 const SOUND_BLAH: &str = "blah.ogg";
