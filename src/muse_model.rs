@@ -56,6 +56,8 @@ pub enum MuseMessageType {
     JawClench { clench: bool },
 }
 
+pub type TimedMuseMessage = (Duration, MuseMessageType);
+
 #[derive(Clone, Debug)]
 pub struct MuseMessage {
     pub time: Duration, // Since UNIX_EPOCH, the beginning of 1970
@@ -162,7 +164,7 @@ impl NormalizedValue {
 pub struct MuseModel {
     most_recent_message_receive_time: Duration,
     pub inner_receiver: inner_receiver::InnerMessageReceiver,
-    tx_eeg: Sender<(Duration, MuseMessageType)>,
+    tx_eeg: Sender<TimedMuseMessage>,
     accelerometer: [f32; 3],
     gyro: [f32; 3],
     pub alpha: [f32; 4],
@@ -219,11 +221,9 @@ fn average_from_four_electrodes(x: &[f32; 4]) -> f32 {
 
 impl MuseModel {
     /// Create a new model for storing received values
-    pub fn new() -> (Receiver<(Duration, MuseMessageType)>, MuseModel) {
-        let (tx_eeg, rx_eeg): (
-            Sender<(Duration, MuseMessageType)>,
-            Receiver<(Duration, MuseMessageType)>,
-        ) = mpsc::channel();
+    pub fn new() -> (Receiver<TimedMuseMessage>, MuseModel) {
+        let (tx_eeg, rx_eeg): (Sender<TimedMuseMessage>, Receiver<TimedMuseMessage>) =
+            mpsc::channel();
 
         let inner_receiver = inner_receiver::InnerMessageReceiver::new();
         let arousal_history = Vec::new();
@@ -354,6 +354,11 @@ impl MuseModel {
         }
     }
 
+    fn send(&self, timed_muse_message: TimedMuseMessage) {
+        let success = self.tx_eeg.send(timed_muse_message);
+        assert!(!success.is_err(), "Can not send message to local receiver");
+    }
+
     /// Update state based on an incoming message
     fn handle_message(
         &mut self,
@@ -364,85 +369,76 @@ impl MuseModel {
         match muse_message.muse_message_type {
             MuseMessageType::Accelerometer { x, y, z } => {
                 self.accelerometer = [x, y, z];
-                self.tx_eeg
+                let _success = self
+                    .tx_eeg
                     .send((time, MuseMessageType::Accelerometer { x, y, z }));
                 Ok(false)
             }
             MuseMessageType::Gyro { x, y, z } => {
                 self.gyro = [x, y, z];
-                self.tx_eeg.send((time, MuseMessageType::Gyro { x, y, z }));
+                self.send((time, MuseMessageType::Gyro { x, y, z }));
                 Ok(false)
             }
             MuseMessageType::Horseshoe { a, b, c, d } => {
                 self.horseshoe = [a, b, c, d];
-                self.tx_eeg
-                    .send((time, MuseMessageType::Horseshoe { a, b, c, d }));
+                self.send((time, MuseMessageType::Horseshoe { a, b, c, d }));
                 Ok(false)
             }
             MuseMessageType::Eeg { a, b, c, d } => {
-                self.tx_eeg
-                    .send((time, MuseMessageType::Eeg { a, b, c, d }));
+                self.send((time, MuseMessageType::Eeg { a, b, c, d }));
                 Ok(false)
             }
             MuseMessageType::Alpha { a, b, c, d } => {
                 self.alpha = [a, b, c, d];
-                self.tx_eeg
-                    .send((time, MuseMessageType::Alpha { a, b, c, d }));
+                self.send((time, MuseMessageType::Alpha { a, b, c, d }));
                 Ok(true)
             }
             MuseMessageType::Beta { a, b, c, d } => {
                 self.beta = [a, b, c, d];
-                self.tx_eeg
-                    .send((time, MuseMessageType::Beta { a, b, c, d }));
+                self.send((time, MuseMessageType::Beta { a, b, c, d }));
                 Ok(true)
             }
             MuseMessageType::Gamma { a, b, c, d } => {
                 self.gamma = [a, b, c, d];
-                self.tx_eeg
-                    .send((time, MuseMessageType::Gamma { a, b, c, d }));
+                self.send((time, MuseMessageType::Gamma { a, b, c, d }));
                 Ok(true)
             }
             MuseMessageType::Delta { a, b, c, d } => {
                 self.delta = [a, b, c, d];
                 // println!("Delta {} {} {} {}", a, b, c, d);
-                self.tx_eeg
-                    .send((time, MuseMessageType::Delta { a, b, c, d }));
+                self.send((time, MuseMessageType::Delta { a, b, c, d }));
                 Ok(true)
             }
             MuseMessageType::Theta { a, b, c, d } => {
                 self.theta = [a, b, c, d];
                 // println!("Theta {} {} {} {}", a, b, c, d);
-                self.tx_eeg
-                    .send((time, MuseMessageType::Theta { a, b, c, d }));
+                self.send((time, MuseMessageType::Theta { a, b, c, d }));
                 Ok(true)
             }
             MuseMessageType::Batt { batt } => {
                 self.batt = batt;
-                self.tx_eeg
-                    .send((muse_message.time, MuseMessageType::Batt { batt }));
+                self.send((muse_message.time, MuseMessageType::Batt { batt }));
                 Ok(false)
             }
             MuseMessageType::TouchingForehead { touch } => {
                 if !touch {
                     self.touching_forehead_countdown = FOREHEAD_COUNTDOWN;
                 }
-                self.tx_eeg
-                    .send((time, MuseMessageType::TouchingForehead { touch }));
+                self.send((time, MuseMessageType::TouchingForehead { touch }));
                 Ok(false)
             }
             MuseMessageType::Blink { blink } => {
                 if blink {
                     self.blink_countdown = BLINK_COUNTDOWN;
                 }
-                self.tx_eeg.send((time, MuseMessageType::Blink { blink }));
+                self.send((time, MuseMessageType::Blink { blink }));
                 Ok(false)
             }
             MuseMessageType::JawClench { clench } => {
                 if clench {
                     self.jaw_clench_countdown = CLENCH_COUNTDOWN;
                 }
-                self.tx_eeg
-                    .send((time, MuseMessageType::JawClench { clench }));
+                self.send((time, MuseMessageType::JawClench { clench }));
                 Ok(false)
             }
         }
