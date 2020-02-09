@@ -15,7 +15,7 @@ use std::{convert::From, time::Duration};
 const FOREHEAD_COUNTDOWN: i32 = 30; // 60th of a second counts
 const BLINK_COUNTDOWN: i32 = 30;
 const CLENCH_COUNTDOWN: i32 = 30;
-const HISTORY_LENGTH: usize = 1000; // Used to trunacte ArousalHistory and ValenceHistory length - this is the number of samples in the normalization phase
+const HISTORY_LENGTH: usize = 120; // Used to trunacte ArousalHistory and ValenceHistory length - this is the number of samples in the normalization phase
 const TP9: usize = 0; // Muse measurment array index for first electrode
 const AF7: usize = 1; // Muse measurment array index for second electrode
 const AF8: usize = 2; // Muse measurment array index for third electrode

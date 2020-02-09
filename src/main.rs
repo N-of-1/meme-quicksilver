@@ -11,12 +11,14 @@ extern crate web_logger;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 extern crate nannou_osc;
 
+extern crate arr_macro;
 extern crate num_traits;
 extern crate quicksilver;
 
 #[macro_use]
 extern crate log;
 
+use arr_macro::arr;
 use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
     combinators::result,
@@ -142,12 +144,15 @@ struct AppState {
     title_text: Asset<Image>,
     help_text: Asset<Image>,
     logo: Asset<Image>,
+
     sound_click: Asset<Sound>,
     sound_blah: Asset<Sound>,
     left_button_color: Color,
     right_button_color: Color,
     muse_model: MuseModel,
     rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
+    calm_ext: ImageSet,
+    neg_pos: ImageSet,
 }
 
 impl AppState {
@@ -193,6 +198,9 @@ impl State for AppState {
         let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
         let (rx_eeg, muse_model) = muse_model::MuseModel::new();
 
+        let calm_ext = ImageSet::new("calm_ext");
+        let neg_pos = ImageSet::new("neg_pos");
+
         Ok(AppState {
             frame_count: 0,
             title_text,
@@ -204,6 +212,8 @@ impl State for AppState {
             right_button_color: COLOR_CLEAR,
             muse_model,
             rx_eeg,
+            calm_ext,
+            neg_pos,
         })
     }
 
@@ -387,6 +397,36 @@ impl State for AppState {
     fn handle_error(error: quicksilver::Error) {
         error!("Unhandled error: {:?}", error);
         panic!("Unhandled error: {:?}", error);
+    }
+}
+
+const IMAGE_SET_SIZE: usize = 10;
+struct ImageSet {
+    images: [Asset<Image>; IMAGE_SET_SIZE],
+}
+
+fn filename(filename_prefix: &str, i: usize) -> String {
+    let mut filename = String::new();
+    filename.push_str(filename_prefix);
+    filename.push_str(&format!("{}", i));
+    filename.push_str(".png");
+
+    filename
+}
+
+impl ImageSet {
+    fn new(filename_prefix: &str) -> Self {
+        let mut i: usize = 0;
+        let mut images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
+                i += 1;
+                i - 1
+            }))); 10];
+
+        // for i in 0..IMAGE_SET_SIZE {
+        //     images[i] = Asset::new(Image::load(filename(filename_prefix, i)));
+        // }
+
+        Self { images }
     }
 }
 
