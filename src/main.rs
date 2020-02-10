@@ -153,8 +153,6 @@ struct AppState {
     muse_model: MuseModel,
     eeg_view_state: EegViewState,
     rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
-    calm_ext: ImageSet,
-    neg_pos: ImageSet,
 }
 
 impl AppState {
@@ -202,9 +200,6 @@ impl State for AppState {
 
         let eeg_view_state = EegViewState::new();
 
-        let calm_ext = ImageSet::new("calm_ext");
-        let neg_pos = ImageSet::new("neg_pos");
-
         Ok(AppState {
             frame_count: 0,
             title_text,
@@ -216,8 +211,6 @@ impl State for AppState {
             right_button_color: COLOR_CLEAR,
             eeg_view_state,
             rx_eeg,
-            calm_ext,
-            neg_pos,
             muse_model,
         })
     }

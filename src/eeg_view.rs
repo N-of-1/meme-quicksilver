@@ -73,23 +73,112 @@ const SPIDER_POINT_RADIUS: f32 = 10.0; // Size of the dot on each graph point
 const SPIDER_GRAPH_AXIS_LENGTH: f32 = 200.0; // Distance from center to pentagon tips
 const SPIDER_GRAPH_LABEL_OFFSET: Vector = Vector { x: -160., y: -160. }; // Shift labels up and right from the center of the spider graph
 const FREQUENCY_LABEL_OFFSET: Vector = Vector { x: 0.5, y: -1.5 }; // Shift letters up slightly to center in the circle
-const SPIDER_SCALE: f32 = 50.0; // Make alpha etc larger
+const SPIDER_SCALE: f32 = 100.0; // Make alpha etc larger
 
 pub struct EegViewState {
+    touching_forehead_box: LabeledBox,
     blink_box: LabeledBox,
+    clench_box: LabeledBox,
+    graph_label_images: [Asset<Image>; N_EEG_CHANNELS],
+    frequency_label_images: [Asset<Image>; N_EEG_DERIVED_VALUES],
+    calm_ext: ImageSet,
+    neg_pos: ImageSet,
 }
 
 impl EegViewState {
     pub fn new() -> Self {
+        assert!(N_EEG_DERIVED_VALUES == EEG_COLORS.len());
+        assert!(N_EEG_DERIVED_VALUES == EEG_FREQUENCY_BAND_LABELS.len());
+
+        let mut graph_label_images: [Asset<Image>; N_EEG_CHANNELS] = [
+            Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
+                result(font.render(
+                    EEG_CHANNEL_LABELS[0],
+                    &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
+                ))
+            })),
+            Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
+                result(font.render(
+                    EEG_CHANNEL_LABELS[1],
+                    &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
+                ))
+            })),
+            Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
+                result(font.render(
+                    EEG_CHANNEL_LABELS[2],
+                    &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
+                ))
+            })),
+            Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
+                result(font.render(
+                    EEG_CHANNEL_LABELS[3],
+                    &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
+                ))
+            })),
+        ];
+
+        let mut frequency_label_images: [Asset<Image>; N_EEG_DERIVED_VALUES] = [
+            Asset::new(Font::load(FONT_MULI).and_then(|font| {
+                result(font.render(
+                    EEG_FREQUENCY_BAND_LABELS[0],
+                    &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+                ))
+            })),
+            Asset::new(Font::load(FONT_MULI).and_then(|font| {
+                result(font.render(
+                    EEG_FREQUENCY_BAND_LABELS[1],
+                    &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+                ))
+            })),
+            Asset::new(Font::load(FONT_MULI).and_then(|font| {
+                result(font.render(
+                    EEG_FREQUENCY_BAND_LABELS[2],
+                    &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+                ))
+            })),
+            Asset::new(Font::load(FONT_MULI).and_then(|font| {
+                result(font.render(
+                    EEG_FREQUENCY_BAND_LABELS[3],
+                    &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+                ))
+            })),
+            Asset::new(Font::load(FONT_MULI).and_then(|font| {
+                result(font.render(
+                    EEG_FREQUENCY_BAND_LABELS[4],
+                    &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+                ))
+            })),
+        ];
+
         Self {
+            touching_forehead_box: LabeledBox::new(
+                "Forehead",
+                Vector::new(200., 500.),
+                Vector::new(200., 50.),
+                Color::RED,
+                COLOR_BACKGROUND,
+                COLOR_TEXT,
+            ),
             blink_box: LabeledBox::new(
                 "Blink",
                 Vector::new(500., 500.),
                 Vector::new(200., 50.),
-                Color::GREEN,
+                Color::BLUE,
                 COLOR_BACKGROUND,
                 COLOR_TEXT,
             ),
+            clench_box: LabeledBox::new(
+                "Jaw Clench",
+                Vector::new(800., 500.),
+                Vector::new(200., 50.),
+                Color::BLUE,
+                COLOR_BACKGROUND,
+                COLOR_TEXT,
+            ),
+            graph_label_images,
+            frequency_label_images,
+            calm_ext: ImageSet::new("calm_ext"),
+            neg_pos: ImageSet::new("neg_pos"),
         }
     }
 }
@@ -202,69 +291,6 @@ fn draw_eeg_values_view(
     window: &mut Window,
     eeg_view_state: &mut EegViewState,
 ) {
-    assert!(N_EEG_DERIVED_VALUES == EEG_COLORS.len());
-    assert!(N_EEG_DERIVED_VALUES == EEG_FREQUENCY_BAND_LABELS.len());
-
-    let mut graph_labels_images: [Asset<Image>; N_EEG_CHANNELS] = [
-        Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
-            result(font.render(
-                EEG_CHANNEL_LABELS[0],
-                &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
-            ))
-        })),
-        Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
-            result(font.render(
-                EEG_CHANNEL_LABELS[1],
-                &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
-            ))
-        })),
-        Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
-            result(font.render(
-                EEG_CHANNEL_LABELS[2],
-                &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
-            ))
-        })),
-        Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
-            result(font.render(
-                EEG_CHANNEL_LABELS[3],
-                &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
-            ))
-        })),
-    ];
-
-    let mut frequency_label_images: [Asset<Image>; 5] = [
-        Asset::new(Font::load(FONT_MULI).and_then(|font| {
-            result(font.render(
-                EEG_FREQUENCY_BAND_LABELS[0],
-                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
-            ))
-        })),
-        Asset::new(Font::load(FONT_MULI).and_then(|font| {
-            result(font.render(
-                EEG_FREQUENCY_BAND_LABELS[1],
-                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
-            ))
-        })),
-        Asset::new(Font::load(FONT_MULI).and_then(|font| {
-            result(font.render(
-                EEG_FREQUENCY_BAND_LABELS[2],
-                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
-            ))
-        })),
-        Asset::new(Font::load(FONT_MULI).and_then(|font| {
-            result(font.render(
-                EEG_FREQUENCY_BAND_LABELS[3],
-                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
-            ))
-        })),
-        Asset::new(Font::load(FONT_MULI).and_then(|font| {
-            result(font.render(
-                EEG_FREQUENCY_BAND_LABELS[4],
-                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
-            ))
-        })),
-    ];
-
     for chan in 0..N_EEG_CHANNELS {
         let mut spider_values = [0.0; 5];
         spider_values[0] = SPIDER_SCALE * muse_model.alpha[chan];
@@ -275,8 +301,8 @@ fn draw_eeg_values_view(
 
         draw_spider_graph(
             chan,
-            &mut graph_labels_images,
-            &mut frequency_label_images,
+            &mut eeg_view_state.graph_label_images,
+            &mut eeg_view_state.frequency_label_images,
             &EEG_COLORS,
             spider_values,
             window,
@@ -284,7 +310,13 @@ fn draw_eeg_values_view(
     }
 
     // Draw current Muse headset state
+    eeg_view_state
+        .touching_forehead_box
+        .draw(muse_model.is_touching_forehead(), window);
     eeg_view_state.blink_box.draw(muse_model.is_blink(), window);
+    eeg_view_state
+        .clench_box
+        .draw(muse_model.is_jaw_clench(), window);
 
     // TODO Draw current arousal and valence values
 }

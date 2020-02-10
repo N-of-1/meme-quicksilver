@@ -171,8 +171,8 @@ where
             if val < self.min {
                 self.min = val;
             }
-            self.history.push(val);
             if self.history.len() < HISTORY_LENGTH {
+                self.history.push(val);
                 self.mean = mean(&self.history);
                 self.deviation = std_deviation(&self.history, self.mean);
             }
