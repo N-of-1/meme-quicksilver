@@ -417,14 +417,10 @@ fn filename(filename_prefix: &str, i: usize) -> String {
 impl ImageSet {
     fn new(filename_prefix: &str) -> Self {
         let mut i: usize = 0;
-        let mut images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
+        let images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
                 i += 1;
                 i - 1
             }))); 10];
-
-        // for i in 0..IMAGE_SET_SIZE {
-        //     images[i] = Asset::new(Image::load(filename(filename_prefix, i)));
-        // }
 
         Self { images }
     }
