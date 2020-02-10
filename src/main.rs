@@ -39,7 +39,8 @@ mod muse_model;
 mod muse_packet;
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-const SCREEN_SIZE: (f32, f32) = (1280.0, 768.0);
+const SCREEN_SIZE: (f32, f32) = (1920.0, 1080.0);
+// const SCREEN_SIZE: (f32, f32) = (1280.0, 768.0);
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 const SCREEN_SIZE: (f32, f32) = (1280.0, 650.0);
 
