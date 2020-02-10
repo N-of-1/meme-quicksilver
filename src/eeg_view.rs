@@ -38,15 +38,16 @@ pub const COLOR_THETA: Color = Color {
     b: 1.0,
     a: 1.0,
 };
-pub const EEG_COLORS: [Color; 5] = [
+pub const EEG_COLORS: [Color; N_EEG_DERIVED_VALUES] = [
     COLOR_ALPHA,
     COLOR_BETA,
     COLOR_GAMMA,
     COLOR_DELTA,
     COLOR_THETA,
 ];
-const EEG_CHANNEL_LABELS: [&str; 4] = ["TP9", "AF7", "AF8", "TP10"];
-const SPIDER_GRAPH_POSITIONS: [Vector; 4] = [
+const EEG_CHANNEL_LABELS: [&str; N_EEG_CHANNELS] = ["TP9", "AF7", "AF8", "TP10"];
+const SPIDER_GRAPH_POSITIONS: [Vector; N_EEG_CHANNELS] = [
+    // Location of the
     Vector { x: 300.0, y: 300.0 },
     Vector { x: 700.0, y: 300.0 },
     Vector {
@@ -59,27 +60,28 @@ const SPIDER_GRAPH_POSITIONS: [Vector; 4] = [
     },
 ];
 
-const EEG_FREQUENCY_BAND_LABELS: [&str; 5] = ["A", "B", "G", "D", "T"];
+const EEG_FREQUENCY_BAND_LABELS: [&str; N_EEG_DERIVED_VALUES] = ["A", "B", "G", "D", "T"];
 
-const COLOR_SPIDER_GRAPH: Color = Color::WHITE;
-const FIRST_EEG_CHANNEL: usize = 0;
+const COLOR_SPIDER_GRAPH: Color = Color::WHITE; // Thin lines marking the axes and outer border
+const COLOR_SPIDER_GRAPH_OUTLINE: Color = COLOR_NOF1_TURQOISE; // Thick line connecting dots of the graph values
 const N_EEG_CHANNELS: usize = 4;
-const FIRST_EEG_DERIVED_VALUE: usize = 0;
 const N_EEG_DERIVED_VALUES: usize = 5;
 
-const SPIDER_LINE_THICKNESS: f32 = 2.5; // Thickness of the line between points
+const SPIDER_LINE_THICKNESS: f32 = 3.5; // Thickness of the line between points
 const SPIDER_LINE_AXIS_THICKNESS: f32 = 1.5; // Thickness of the axis labels
 const SPIDER_POINT_RADIUS: f32 = 10.0; // Size of the dot on each graph point
 const SPIDER_GRAPH_AXIS_LENGTH: f32 = 200.0; // Distance from center to pentagon tips
-const SPIDER_GRAPH_LABEL_OFFSET: Vector = Vector { x: -160., y: -160. };
+const SPIDER_GRAPH_LABEL_OFFSET: Vector = Vector { x: -160., y: -160. }; // Shift labels up and right from the center of the spider graph
+const FREQUENCY_LABEL_OFFSET: Vector = Vector { x: 0.5, y: -1.5 }; // Shift letters up slightly to center in the circle
+const SPIDER_SCALE: f32 = 50.0; // Make alpha etc larger
 
 /// Render concenctric circules associated with alpha, beta, gamma..
-pub fn draw_view(muse_model: &MuseModel, window: &mut Window) {
+pub fn draw_view(muse_model: &MuseModel, window: &mut Window, blink_box: &mut LabeledBox) {
     match muse_model.display_type {
         DisplayType::FourCircles => draw_four_circles_view(muse_model, window),
         DisplayType::Dowsiness => draw_drowsiness_view(muse_model, window),
         DisplayType::Emotion => draw_emotion_view(muse_model, window),
-        DisplayType::EegValues => draw_eeg_values_view(muse_model, window),
+        DisplayType::EegValues => draw_eeg_values_view(muse_model, window, blink_box),
     }
 }
 
@@ -166,8 +168,6 @@ fn blink_color(blink: bool) -> Color {
     COLOR_BACKGROUND
 }
 
-const RECT_KEY: (f32, f32) = (50.0, 10.0);
-
 /// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
 fn draw_polygon(
     line_color: &Color,
@@ -185,46 +185,31 @@ fn draw_polygon(
     window.draw(&Circle::new((x, y), radius), Col(*line_color));
 }
 
-struct GraphLabel {
-    image: Asset<Image>,
-    position: (f64, f64),
-}
-
-impl GraphLabel {
-    fn new(text: String, position: (f64, f64)) -> Self {
-        let image = Asset::new(Font::load(FONT_MULI).and_then(move |font| {
-            result(font.render(&text, &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL)))
-        }));
-
-        Self { image, position }
-    }
-}
-
 /// A set of all EEG values displayed for diagnostic purposes
-fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
+fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window, blink_box: &mut LabeledBox) {
     assert!(N_EEG_DERIVED_VALUES == EEG_COLORS.len());
     assert!(N_EEG_DERIVED_VALUES == EEG_FREQUENCY_BAND_LABELS.len());
 
     let mut graph_labels_images: [Asset<Image>; N_EEG_CHANNELS] = [
-        Asset::new(Font::load(FONT_MULI).and_then(|font| {
+        Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
             result(font.render(
                 EEG_CHANNEL_LABELS[0],
                 &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
             ))
         })),
-        Asset::new(Font::load(FONT_MULI).and_then(|font| {
+        Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
             result(font.render(
                 EEG_CHANNEL_LABELS[1],
                 &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
             ))
         })),
-        Asset::new(Font::load(FONT_MULI).and_then(|font| {
+        Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
             result(font.render(
                 EEG_CHANNEL_LABELS[2],
                 &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
             ))
         })),
-        Asset::new(Font::load(FONT_MULI).and_then(|font| {
+        Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
             result(font.render(
                 EEG_CHANNEL_LABELS[3],
                 &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
@@ -265,8 +250,7 @@ fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
         })),
     ];
 
-    const SPIDER_SCALE: f32 = 50.0;
-    for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
+    for chan in 0..N_EEG_CHANNELS {
         let mut spider_values = [0.0; 5];
         spider_values[0] = SPIDER_SCALE * muse_model.alpha[chan];
         spider_values[1] = SPIDER_SCALE * muse_model.beta[chan];
@@ -284,7 +268,10 @@ fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
         );
     }
 
-    // Draw current arousal and valence values
+    // Draw current Muse headset state
+    blink_box.draw(muse_model.is_blink(), window);
+
+    // TODO Draw current arousal and valence values
 }
 
 /// Put five circles on screen in a pentagon shape, bouncing outward from the center based on EEG frequency band intensity
@@ -305,13 +292,12 @@ fn draw_spider_graph(
     ];
     let mut angle = [0.0; 5];
 
-    for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
-        angle[val] = ((val as f32 * 2. * PI) - (PI / 2.))
-            / (N_EEG_DERIVED_VALUES - FIRST_EEG_DERIVED_VALUE) as f32;
+    for val in 0..N_EEG_DERIVED_VALUES {
+        angle[val] = ((val as f32 * 2. * PI) - (PI / 2.)) / (N_EEG_DERIVED_VALUES) as f32;
     }
 
     // Calculate graph endpoints
-    for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
+    for val in 0..N_EEG_DERIVED_VALUES {
         let radius = spider_values[val]; //TODO Bound the values better
         let (x, y) = end_of_spider_graph(chan, radius, angle[val]);
         position[val] = Vector { x, y };
@@ -329,7 +315,7 @@ fn draw_spider_graph(
     });
 
     // Draw axis lines for each spider graph
-    for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
+    for val in 0..N_EEG_DERIVED_VALUES {
         // Draw from center to outside edge of spider graph
         let center = end_of_spider_graph(chan, 0.0, angle[val]);
         let tip = end_of_spider_graph(chan, SPIDER_GRAPH_AXIS_LENGTH, angle[val]);
@@ -349,12 +335,12 @@ fn draw_spider_graph(
         // Draw lines between spider graph tips to create a shifting shape
         window.draw(
             &Line::new(position[val], position[wrap_val]).with_thickness(SPIDER_LINE_THICKNESS),
-            Col(COLOR_SPIDER_GRAPH),
+            Col(COLOR_SPIDER_GRAPH_OUTLINE),
         );
     }
 
     // Label the endpoints
-    for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
+    for val in 0..N_EEG_DERIVED_VALUES {
         // Draw the dot at each point on the spider graph
         window.draw(
             &Circle::new(position[val], SPIDER_POINT_RADIUS),
@@ -363,7 +349,12 @@ fn draw_spider_graph(
 
         // Draw the label over the dot
         &frequency_label_images[val].execute(|image| {
-            window.draw(&image.area().with_center(position[val]), Img(&image));
+            window.draw(
+                &image
+                    .area()
+                    .with_center(position[val] + FREQUENCY_LABEL_OFFSET),
+                Img(&image),
+            );
             Ok(())
         });
     }
@@ -380,6 +371,55 @@ fn end_of_spider_graph(channel: usize, radius: f32, angle: f32) -> (f32, f32) {
         radius * angle.cos() as f32 + SPIDER_GRAPH_POSITIONS[channel].x,
         radius * angle.sin() as f32 + SPIDER_GRAPH_POSITIONS[channel].y,
     )
+}
+
+/// A rectangular screen area with text label which changes background color ACTIVE and INACTIVE using a bound function
+pub struct LabeledBox {
+    position: Vector,
+    size: Vector,
+    active_color: Color,
+    inactive_color: Color,
+    text_color: Color,
+    label_image: Asset<Image>,
+}
+
+impl LabeledBox {
+    pub fn new(
+        label: &'static str,
+        position: Vector,
+        size: Vector,
+        active_color: Color,
+        inactive_color: Color,
+        text_color: Color,
+    ) -> Self {
+        let label_image = Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(move |font| {
+            result(font.render(label, &FontStyle::new(FONT_GRAPH_LABEL_SIZE, text_color)))
+        }));
+
+        Self {
+            position,
+            size,
+            active_color,
+            inactive_color,
+            text_color,
+            label_image,
+        }
+    }
+
+    fn draw(&mut self, active: bool, window: &mut Window) {
+        let background_color = match active {
+            true => self.active_color,
+            false => self.inactive_color,
+        };
+
+        //TODO DRAW A RECTANGLE OF BACKGROUND_COLOR
+
+        let pos = self.position + self.size / 2.0;
+        &self.label_image.execute(|image| {
+            window.draw(&image.area().with_center(pos), Img(&image));
+            Ok(())
+        });
+    }
 }
 
 #[cfg(test)]

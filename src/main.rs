@@ -19,6 +19,7 @@ extern crate quicksilver;
 extern crate log;
 
 use arr_macro::arr;
+use eeg_view::LabeledBox;
 use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
     combinators::result,
@@ -97,7 +98,7 @@ const COLOR_NOF1_TURQOISE: Color = Color {
 };
 const COLOR_BACKGROUND: Color = COLOR_GREY;
 const COLOR_TITLE: Color = COLOR_NOF1_DARK_BLUE;
-const COLOR_EEG_LABEL: Color = Color::BLACK;
+const COLOR_EEG_LABEL: Color = COLOR_NOF1_DARK_BLUE;
 const COLOR_TEXT: Color = Color::BLACK;
 const COLOR_BUTTON: Color = COLOR_NOF1_DARK_BLUE;
 const COLOR_BUTTON_PRESSED: Color = COLOR_NOF1_LIGHT_BLUE;
@@ -150,6 +151,7 @@ struct AppState {
     left_button_color: Color,
     right_button_color: Color,
     muse_model: MuseModel,
+    blink_box: LabeledBox,
     rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
     calm_ext: ImageSet,
     neg_pos: ImageSet,
@@ -198,6 +200,15 @@ impl State for AppState {
         let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
         let (rx_eeg, muse_model) = muse_model::MuseModel::new();
 
+        let blink_box = LabeledBox::new(
+            "Blink",
+            Vector::new(500., 500.),
+            Vector::new(200., 50.),
+            Color::GREEN,
+            COLOR_BACKGROUND,
+            COLOR_TEXT,
+        );
+
         let calm_ext = ImageSet::new("calm_ext");
         let neg_pos = ImageSet::new("neg_pos");
 
@@ -211,6 +222,7 @@ impl State for AppState {
             left_button_color: COLOR_CLEAR,
             right_button_color: COLOR_CLEAR,
             muse_model,
+            blink_box,
             rx_eeg,
             calm_ext,
             neg_pos,
@@ -356,7 +368,7 @@ impl State for AppState {
             })?;
             self.right_button_color = COLOR_BUTTON;
         } else if self.frame_count < FRAME_SETTLE {
-            eeg_view::draw_view(&self.muse_model, window);
+            eeg_view::draw_view(&self.muse_model, window, &mut self.blink_box);
         } else if self.frame_count < FRAME_MEME {
             // LEFT BUTTON
             let left_color = self.left_button_color;
