@@ -75,13 +75,32 @@ const SPIDER_GRAPH_LABEL_OFFSET: Vector = Vector { x: -160., y: -160. }; // Shif
 const FREQUENCY_LABEL_OFFSET: Vector = Vector { x: 0.5, y: -1.5 }; // Shift letters up slightly to center in the circle
 const SPIDER_SCALE: f32 = 50.0; // Make alpha etc larger
 
+pub struct EegViewState {
+    blink_box: LabeledBox,
+}
+
+impl EegViewState {
+    pub fn new() -> Self {
+        Self {
+            blink_box: LabeledBox::new(
+                "Blink",
+                Vector::new(500., 500.),
+                Vector::new(200., 50.),
+                Color::GREEN,
+                COLOR_BACKGROUND,
+                COLOR_TEXT,
+            ),
+        }
+    }
+}
+
 /// Render concenctric circules associated with alpha, beta, gamma..
-pub fn draw_view(muse_model: &MuseModel, window: &mut Window, blink_box: &mut LabeledBox) {
+pub fn draw_view(muse_model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {
     match muse_model.display_type {
         DisplayType::FourCircles => draw_four_circles_view(muse_model, window),
         DisplayType::Dowsiness => draw_drowsiness_view(muse_model, window),
         DisplayType::Emotion => draw_emotion_view(muse_model, window),
-        DisplayType::EegValues => draw_eeg_values_view(muse_model, window, blink_box),
+        DisplayType::EegValues => draw_eeg_values_view(muse_model, window, eeg_view_state),
     }
 }
 
@@ -178,7 +197,11 @@ fn draw_polygon(
 }
 
 /// A set of all EEG values displayed for diagnostic purposes
-fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window, blink_box: &mut LabeledBox) {
+fn draw_eeg_values_view(
+    muse_model: &MuseModel,
+    window: &mut Window,
+    eeg_view_state: &mut EegViewState,
+) {
     assert!(N_EEG_DERIVED_VALUES == EEG_COLORS.len());
     assert!(N_EEG_DERIVED_VALUES == EEG_FREQUENCY_BAND_LABELS.len());
 
@@ -261,7 +284,7 @@ fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window, blink_box: 
     }
 
     // Draw current Muse headset state
-    blink_box.draw(muse_model.is_blink(), window);
+    eeg_view_state.blink_box.draw(muse_model.is_blink(), window);
 
     // TODO Draw current arousal and valence values
 }

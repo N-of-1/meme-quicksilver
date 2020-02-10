@@ -19,7 +19,7 @@ extern crate quicksilver;
 extern crate log;
 
 use arr_macro::arr;
-use eeg_view::LabeledBox;
+use eeg_view::{EegViewState, LabeledBox};
 use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
     combinators::result,
@@ -151,7 +151,7 @@ struct AppState {
     left_button_color: Color,
     right_button_color: Color,
     muse_model: MuseModel,
-    blink_box: LabeledBox,
+    eeg_view_state: EegViewState,
     rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
     calm_ext: ImageSet,
     neg_pos: ImageSet,
@@ -200,14 +200,7 @@ impl State for AppState {
         let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
         let (rx_eeg, muse_model) = muse_model::MuseModel::new();
 
-        let blink_box = LabeledBox::new(
-            "Blink",
-            Vector::new(500., 500.),
-            Vector::new(200., 50.),
-            Color::GREEN,
-            COLOR_BACKGROUND,
-            COLOR_TEXT,
-        );
+        let eeg_view_state = EegViewState::new();
 
         let calm_ext = ImageSet::new("calm_ext");
         let neg_pos = ImageSet::new("neg_pos");
@@ -221,11 +214,11 @@ impl State for AppState {
             sound_blah,
             left_button_color: COLOR_CLEAR,
             right_button_color: COLOR_CLEAR,
-            muse_model,
-            blink_box,
+            eeg_view_state,
             rx_eeg,
             calm_ext,
             neg_pos,
+            muse_model,
         })
     }
 
@@ -368,7 +361,7 @@ impl State for AppState {
             })?;
             self.right_button_color = COLOR_BUTTON;
         } else if self.frame_count < FRAME_SETTLE {
-            eeg_view::draw_view(&self.muse_model, window, &mut self.blink_box);
+            eeg_view::draw_view(&self.muse_model, window, &mut self.eeg_view_state);
         } else if self.frame_count < FRAME_MEME {
             // LEFT BUTTON
             let left_color = self.left_button_color;
