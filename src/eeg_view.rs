@@ -160,14 +160,6 @@ fn draw_concentric_polygons(
     );
 }
 
-fn blink_color(blink: bool) -> Color {
-    if blink {
-        return COLOR_NOF1_LIGHT_BLUE;
-    }
-
-    COLOR_BACKGROUND
-}
-
 /// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
 fn draw_polygon(
     line_color: &Color,
@@ -412,7 +404,7 @@ impl LabeledBox {
             false => self.inactive_color,
         };
 
-        //TODO DRAW A RECTANGLE OF BACKGROUND_COLOR
+        window.draw(&Rectangle::new(self.position, self.size), background_color);
 
         let pos = self.position + self.size / 2.0;
         &self.label_image.execute(|image| {
