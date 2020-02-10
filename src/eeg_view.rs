@@ -47,26 +47,29 @@ pub const EEG_COLORS: [Color; 5] = [
 ];
 const EEG_CHANNEL_LABELS: [&str; 4] = ["TP9", "AF7", "AF8", "TP10"];
 const SPIDER_GRAPH_POSITIONS: [Vector; 4] = [
-    Vector { x: 200.0, y: 200.0 },
-    Vector { x: 500.0, y: 200.0 },
-    Vector { x: 800.0, y: 200.0 },
+    Vector { x: 300.0, y: 300.0 },
+    Vector { x: 700.0, y: 300.0 },
     Vector {
         x: 1100.0,
-        y: 200.0,
+        y: 300.0,
+    },
+    Vector {
+        x: 1500.0,
+        y: 300.0,
     },
 ];
-const SPIDER_GRAPH_LABEL_OFFSET: Vector = Vector { x: -120., y: -120. };
 
 const COLOR_SPIDER_GRAPH: Color = Color::WHITE;
 const FIRST_EEG_CHANNEL: usize = 0;
 const N_EEG_CHANNELS: usize = 4;
 const FIRST_EEG_DERIVED_VALUE: usize = 0;
 const N_EEG_DERIVED_VALUES: usize = 5;
+
 const SPIDER_LINE_THICKNESS: f32 = 2.5; // Thickness of the line between points
-const SPIDER_LINE_AXIS_THICKNESS: f32 = 1.0; // Thickness of the axis labels
-const SPIDER_SPACING: f32 = 200.0; // How far apart the spider graphs are drawn
+const SPIDER_LINE_AXIS_THICKNESS: f32 = 1.5; // Thickness of the axis labels
 const SPIDER_POINT_RADIUS: f32 = 10.0; // Size of the dot on each graph point
-const SPIDER_GRAPH_SCALE: f32 = 0.15; // Size of graph as % of screen size
+const SPIDER_GRAPH_AXIS_LENGTH: f32 = 200.0; // Distance from center to pentagon tips
+const SPIDER_GRAPH_LABEL_OFFSET: Vector = Vector { x: -160., y: -160. };
 
 /// Render concenctric circules associated with alpha, beta, gamma..
 pub fn draw_view(muse_model: &MuseModel, window: &mut Window) {
@@ -244,18 +247,12 @@ fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
         spider_values[chan][3] = muse_model.delta[chan];
         spider_values[chan][4] = muse_model.theta[chan];
 
-        shift[chan] = (
-            SPIDER_SPACING * (-PI / 4. + (chan as f32 * PI / 2.).cos()),
-            SPIDER_SPACING * (-PI / 4. + (chan as f32 * PI / 2.).sin()),
-        );
-
         draw_spider_graph(
             chan,
             &mut axis_label,
             &EEG_COLORS,
             spider_values[chan],
             window,
-            SPIDER_GRAPH_SCALE,
         );
     }
 
@@ -269,10 +266,7 @@ fn draw_spider_graph(
     line_color: &[Color],
     value: [f32; 5],
     window: &mut Window,
-    graph_scale: f32,
 ) {
-    let screen_size = window.screen_size();
-    let scale = screen_size.x * graph_scale;
     let mut position: [Vector; 5] = [
         Vector { x: 0.0, y: 0.0 },
         Vector { x: 0.0, y: 0.0 },
@@ -289,7 +283,7 @@ fn draw_spider_graph(
 
     // Calculate graph endpoints
     for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
-        let radius = scale * value[val];
+        let radius = value[val] / 10.0; //TODO Bound the values better
         let (x, y) = end_of_spider_graph(chan, radius, angle[val]);
         position[val] = SPIDER_GRAPH_POSITIONS[chan] + Vector { x, y };
     }
@@ -306,11 +300,10 @@ fn draw_spider_graph(
     });
 
     // Draw axis lines for each spider graph
-    let axis_length = 150.0;
     for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
         // Draw from center to outside edge of spider graph
         let center = end_of_spider_graph(chan, 0.0, angle[val]);
-        let tip = end_of_spider_graph(chan, axis_length, angle[val]);
+        let tip = end_of_spider_graph(chan, SPIDER_GRAPH_AXIS_LENGTH, angle[val]);
         window.draw(
             &Line::new(center, tip).with_thickness(SPIDER_LINE_AXIS_THICKNESS),
             Col(COLOR_SPIDER_GRAPH),
@@ -318,7 +311,7 @@ fn draw_spider_graph(
 
         // Draw outside border of spider graph
         let wrap_val = wrap_eeg_derived_value_index(val);
-        let next_spoke_tip = end_of_spider_graph(chan, axis_length, angle[wrap_val]);
+        let next_spoke_tip = end_of_spider_graph(chan, SPIDER_GRAPH_AXIS_LENGTH, angle[wrap_val]);
         window.draw(
             &Line::new(tip, next_spoke_tip).with_thickness(SPIDER_LINE_AXIS_THICKNESS),
             Col(COLOR_SPIDER_GRAPH),

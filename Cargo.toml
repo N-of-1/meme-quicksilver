@@ -14,10 +14,10 @@ arr_macro = "0.1"
 # quicksilver="0.3"
 
 #[target.'cfg(target_arch = "x86_64")'.dependencies]
-#quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image-fix-test"}
+quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image-fix-test"}
 
 #[target.'cfg(not(target_arch = "x86_64"))'.dependencies]
-quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="v3-gl3-i8u8-fix"}
+#quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="v3-gl3-i8u8-fix"}
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 meme_machine_database = {git = "https://github.com/N-of-1/meme_machine_database.git", version = "0.2.0"}
