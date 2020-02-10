@@ -59,6 +59,8 @@ const SPIDER_GRAPH_POSITIONS: [Vector; 4] = [
     },
 ];
 
+const EEG_FREQUENCY_BAND_LABELS: [&str; 5] = ["A", "B", "G", "D", "T"];
+
 const COLOR_SPIDER_GRAPH: Color = Color::WHITE;
 const FIRST_EEG_CHANNEL: usize = 0;
 const N_EEG_CHANNELS: usize = 4;
@@ -200,58 +202,84 @@ impl GraphLabel {
 
 /// A set of all EEG values displayed for diagnostic purposes
 fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
-    assert!(FIRST_EEG_CHANNEL <= N_EEG_CHANNELS);
-    assert!(FIRST_EEG_DERIVED_VALUE <= N_EEG_DERIVED_VALUES);
-    assert!(N_EEG_DERIVED_VALUES <= EEG_COLORS.len());
-    assert!(N_EEG_DERIVED_VALUES <= EEG_LABELS.len());
+    assert!(N_EEG_DERIVED_VALUES == EEG_COLORS.len());
+    assert!(N_EEG_DERIVED_VALUES == EEG_FREQUENCY_BAND_LABELS.len());
 
-    let mut shift = [(0.0, 0.0); 4];
-    let mut spider_values = [[0.0; 5]; 4];
-    let mut axis_label: [Asset<Image>; 5] = [
+    let mut graph_labels_images: [Asset<Image>; N_EEG_CHANNELS] = [
         Asset::new(Font::load(FONT_MULI).and_then(|font| {
             result(font.render(
                 EEG_CHANNEL_LABELS[0],
-                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+                &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
             ))
         })),
         Asset::new(Font::load(FONT_MULI).and_then(|font| {
             result(font.render(
                 EEG_CHANNEL_LABELS[1],
-                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+                &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
             ))
         })),
         Asset::new(Font::load(FONT_MULI).and_then(|font| {
             result(font.render(
                 EEG_CHANNEL_LABELS[2],
-                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+                &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
             ))
         })),
         Asset::new(Font::load(FONT_MULI).and_then(|font| {
             result(font.render(
                 EEG_CHANNEL_LABELS[3],
+                &FontStyle::new(FONT_GRAPH_LABEL_SIZE, COLOR_EEG_LABEL),
+            ))
+        })),
+    ];
+
+    let mut frequency_label_images: [Asset<Image>; 5] = [
+        Asset::new(Font::load(FONT_MULI).and_then(|font| {
+            result(font.render(
+                EEG_FREQUENCY_BAND_LABELS[0],
                 &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
             ))
         })),
         Asset::new(Font::load(FONT_MULI).and_then(|font| {
             result(font.render(
-                EEG_LABELS[4],
+                EEG_FREQUENCY_BAND_LABELS[1],
+                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+            ))
+        })),
+        Asset::new(Font::load(FONT_MULI).and_then(|font| {
+            result(font.render(
+                EEG_FREQUENCY_BAND_LABELS[2],
+                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+            ))
+        })),
+        Asset::new(Font::load(FONT_MULI).and_then(|font| {
+            result(font.render(
+                EEG_FREQUENCY_BAND_LABELS[3],
+                &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
+            ))
+        })),
+        Asset::new(Font::load(FONT_MULI).and_then(|font| {
+            result(font.render(
+                EEG_FREQUENCY_BAND_LABELS[4],
                 &FontStyle::new(FONT_EEG_LABEL_SIZE, COLOR_EEG_LABEL),
             ))
         })),
     ];
 
+    const SPIDER_SCALE: f32 = 50.0;
     for chan in FIRST_EEG_CHANNEL..N_EEG_CHANNELS {
-        spider_values[chan][0] = muse_model.alpha[chan];
-        spider_values[chan][1] = muse_model.beta[chan];
-        spider_values[chan][2] = muse_model.gamma[chan];
-        spider_values[chan][3] = muse_model.delta[chan];
-        spider_values[chan][4] = muse_model.theta[chan];
+        let mut spider_values = [0.0; 5];
+        spider_values[0] = SPIDER_SCALE * muse_model.alpha[chan];
+        spider_values[1] = SPIDER_SCALE * muse_model.beta[chan];
+        spider_values[2] = SPIDER_SCALE * muse_model.gamma[chan];
+        spider_values[3] = SPIDER_SCALE * muse_model.delta[chan];
+        spider_values[4] = SPIDER_SCALE * muse_model.theta[chan];
 
         draw_spider_graph(
             chan,
-            &mut axis_label,
+            &mut graph_labels_images,
+            &mut frequency_label_images,
             &EEG_COLORS,
-            spider_values[chan],
+            spider_values,
             window,
         );
     }
@@ -259,12 +287,13 @@ fn draw_eeg_values_view(muse_model: &MuseModel, window: &mut Window) {
     // Draw current arousal and valence values
 }
 
-/// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
+/// Put five circles on screen in a pentagon shape, bouncing outward from the center based on EEG frequency band intensity
 fn draw_spider_graph(
     chan: usize,
-    label_images: &mut [Asset<Image>],
+    graph_label_images: &mut [Asset<Image>; N_EEG_CHANNELS],
+    frequency_label_images: &mut [Asset<Image>; N_EEG_DERIVED_VALUES],
     line_color: &[Color],
-    value: [f32; 5],
+    spider_values: [f32; 5],
     window: &mut Window,
 ) {
     let mut position: [Vector; 5] = [
@@ -283,13 +312,13 @@ fn draw_spider_graph(
 
     // Calculate graph endpoints
     for val in FIRST_EEG_DERIVED_VALUE..N_EEG_DERIVED_VALUES {
-        let radius = value[val] / 10.0; //TODO Bound the values better
+        let radius = spider_values[val]; //TODO Bound the values better
         let (x, y) = end_of_spider_graph(chan, radius, angle[val]);
-        position[val] = SPIDER_GRAPH_POSITIONS[chan] + Vector { x, y };
+        position[val] = Vector { x, y };
     }
 
     // Label the graph
-    &label_images[chan].execute(|image| {
+    &graph_label_images[chan].execute(|image| {
         window.draw(
             &image
                 .area()
@@ -317,7 +346,7 @@ fn draw_spider_graph(
             Col(COLOR_SPIDER_GRAPH),
         );
 
-        // Draw spider graph tip connection shape
+        // Draw lines between spider graph tips to create a shifting shape
         window.draw(
             &Line::new(position[val], position[wrap_val]).with_thickness(SPIDER_LINE_THICKNESS),
             Col(COLOR_SPIDER_GRAPH),
@@ -333,11 +362,8 @@ fn draw_spider_graph(
         );
 
         // Draw the label over the dot
-        &label_images[val].execute(|image| {
-            window.draw(
-                &image.area().with_center(SPIDER_GRAPH_POSITIONS[chan]),
-                Img(&image),
-            );
+        &frequency_label_images[val].execute(|image| {
+            window.draw(&image.area().with_center(position[val]), Img(&image));
             Ok(())
         });
     }
