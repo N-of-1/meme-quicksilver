@@ -4,7 +4,7 @@ use core::f32::consts::PI;
 
 use quicksilver::{
     geom::{Circle, Vector},
-    graphics::{Background::Col, Color},
+    graphics::{Background::Col, Color, Image},
     lifecycle::Window,
 };
 
@@ -100,7 +100,17 @@ impl ImageSet {
         Self { images }
     }
 
-    fn draw(image_number: usize, window: &mut Window) {}
+    fn draw(&mut self, image_number: usize, window: &mut Window) {
+        self.images[image_number].execute(|image| {
+            window.draw(
+                &image
+                    .area()
+                    .with_center((SCREEN_SIZE.0 / 2.0, SCREEN_SIZE.1 / 2.0)),
+                Img(&image),
+            );
+            Ok(())
+        });
+    }
 }
 
 pub struct EegViewState {
@@ -205,7 +215,7 @@ impl EegViewState {
             ),
             graph_label_images,
             frequency_label_images,
-            calm_ext: ImageSet::new("calm_ext"),
+            calm_ext: ImageSet::new("calm_ex"),
             pos_neg: ImageSet::new("pos_neg"),
         }
     }
@@ -224,8 +234,6 @@ pub fn draw_view(muse_model: &MuseModel, window: &mut Window, eeg_view_state: &m
 /// A bigger yellow circle indiates greater happiness. Maybe.
 fn draw_emotion_sun_view(model: &MuseModel, window: &mut Window) {
     let asymm = model.calc_absolute_valence();
-
-    //TODO Change this to Mandala display
 
     draw_circle(&COLOR_EMOTION, asymm / 5.0, window, model.scale, (0.0, 0.0));
 }
@@ -246,7 +254,12 @@ fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
     );
 }
 
-fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {}
+fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {
+    //TODO update based on emotion and excitement
+
+    eeg_view_state.pos_neg.draw(9, window);
+    eeg_view_state.calm_ext.draw(9, window);
+}
 
 /// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
 fn draw_circle(line_color: &Color, value: f32, window: &mut Window, scale: f32, shift: (f32, f32)) {
