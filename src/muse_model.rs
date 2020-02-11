@@ -1,6 +1,6 @@
 use crate::muse_packet::*;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-use std::iter::Sum;
+
 /// Muse data model and associated message handling from muse_packet
 // #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::sync::mpsc::SendError;
@@ -15,7 +15,7 @@ use std::{convert::From, time::Duration};
 const FOREHEAD_COUNTDOWN: i32 = 5; // 60th of a second counts
 const BLINK_COUNTDOWN: i32 = 5;
 const CLENCH_COUNTDOWN: i32 = 5;
-const HISTORY_LENGTH: usize = 240; // Used to trunacte ArousalHistory and ValenceHistory length - this is the number of samples in the normalization phase
+const HISTORY_LENGTH: usize = 120; // Used to trunacte ArousalHistory and ValenceHistory length - this is the number of samples in the normalization phase
 const TP9: usize = 0; // Muse measurment array index for first electrode
 const AF7: usize = 1; // Muse measurment array index for second electrode
 const AF8: usize = 2; // Muse measurment array index for third electrode
@@ -135,6 +135,8 @@ mod inner_receiver {
     }
 }
 
+const WINDOW_LENGTH: usize = 10; // Current values is smoothed by most recent X values
+
 pub struct NormalizedValue<T: Float + From<i16>> {
     current: Option<T>,
     min: Option<T>,
@@ -142,6 +144,7 @@ pub struct NormalizedValue<T: Float + From<i16>> {
     mean: Option<T>,
     deviation: Option<T>,
     history: Vec<T>,
+    moving_average_history: Vec<T>,
 }
 
 impl<T> NormalizedValue<T>
@@ -156,6 +159,20 @@ where
             mean: None,
             deviation: None,
             history: Vec::new(),
+            moving_average_history: Vec::new(),
+        }
+    }
+
+    fn moving_average(&self) -> Option<T>
+    where
+        T: Float + From<i16>,
+    {
+        let count = self.moving_average_history.len() as i16;
+        let sum = sum(&self.moving_average_history);
+
+        match count {
+            positive if positive > 0 => Some(sum / count.into()),
+            _ => None,
         }
     }
 
@@ -174,10 +191,15 @@ where
             if !self.min.is_some() || self.min.unwrap() > val {
                 self.min = Some(val);
             }
-            if self.history.len() < HISTORY_LENGTH {
-                self.history.push(val);
-                self.mean = mean(&self.history);
-                self.deviation = std_deviation(&self.history, self.mean);
+            self.history.push(val);
+            if self.history.len() > HISTORY_LENGTH {
+                self.history.remove(0);
+            }
+            self.mean = mean(&self.history);
+            self.deviation = std_deviation(&self.history, self.mean);
+            self.moving_average_history.push(val);
+            if self.moving_average_history.len() >= WINDOW_LENGTH {
+                self.moving_average_history.remove(0);
             }
         }
 
@@ -188,14 +210,20 @@ where
         self.history.len() as f32 / HISTORY_LENGTH as f32
     }
 
-    pub fn get(&self) -> Option<T> {
-        self.current
-    }
     pub fn min(&self) -> Option<T> {
         self.min
     }
+
     pub fn max(&self) -> Option<T> {
         self.max
+    }
+
+    pub fn mean(&self) -> Option<T> {
+        self.mean
+    }
+
+    pub fn deviation(&self) -> Option<T> {
+        self.deviation
     }
 
     pub fn percent(&self) -> Option<T> {
@@ -218,7 +246,7 @@ where
     pub fn normalize(&self, val: Option<T>) -> Option<T> {
         match val {
             Some(v) => {
-                let mean_and_deviation = (self.mean, self.deviation);
+                let mean_and_deviation = (self.mean(), self.deviation());
 
                 match mean_and_deviation {
                     (Some(mean), Some(deviation)) => Some((v - mean) / deviation),
@@ -386,7 +414,9 @@ impl MuseModel {
         if updated_numeric_values {
             let (ua, uv) = (self.update_arousal(), self.update_valence());
 
-            if let (Some(valence), Some(arousal)) = (self.valence.get(), self.arousal.get()) {
+            if let (Some(valence), Some(arousal)) =
+                (self.valence.moving_average(), self.arousal.moving_average())
+            {
                 let normalized_valence = self.valence.normalize(Some(valence)).unwrap();
                 let normalized_valence_min = self.valence.normalize(self.valence.min()).unwrap();
                 let normalized_valence_max = self.valence.normalize(self.valence.max()).unwrap();
@@ -424,7 +454,10 @@ impl MuseModel {
 
     /// Level of emotional intensity based on other, more primitive values
     pub fn calc_abolute_arousal(&self) -> f32 {
-        (self.alpha[TP9] + self.alpha[TP10]) / (self.theta[TP9] + self.theta[AF7])
+        let base = std::f32::consts::E;
+        let posterior_alpha = (self.alpha[TP9] + self.alpha[TP10]) / 2.0;
+        let posterior_theta = (self.theta[TP9] + self.theta[AF7]) / 2.0;
+        base.powf(posterior_alpha - posterior_theta)
     }
 
     /// Calculate the current arousal value and add it to the length-limited history
@@ -526,5 +559,139 @@ impl MuseModel {
                 Ok(false)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::muse_model::NormalizedValue;
+
+    #[test]
+    fn test_no_mean() {
+        let v: Vec<f64> = Vec::new();
+        assert_eq!(None, crate::muse_model::mean(&v));
+    }
+
+    #[test]
+    fn test_mean() {
+        let mut v = vec![1.0, 3.0];
+        assert_eq!(2.0, crate::muse_model::mean(&v).unwrap());
+
+        v.push(5.0);
+        assert_eq!(3.0, crate::muse_model::mean(&v).unwrap());
+    }
+
+    #[test]
+    fn test_no_deviation() {
+        let v: Vec<f64> = Vec::new();
+        let mean = crate::muse_model::mean(&v);
+        assert_eq!(None, crate::muse_model::std_deviation(&v, mean));
+    }
+
+    #[test]
+    fn test_deviation() {
+        let mut v = vec![1.0];
+        let mut mean = crate::muse_model::mean(&v);
+        assert_eq!(0.0, crate::muse_model::std_deviation(&v, mean).unwrap());
+
+        v.push(3.0);
+        mean = crate::muse_model::mean(&v);
+        assert_eq!(1.0, crate::muse_model::std_deviation(&v, mean).unwrap());
+
+        v.push(5.0);
+        v.push(7.0);
+        mean = crate::muse_model::mean(&v);
+        assert_eq!(
+            2.23606797749979,
+            crate::muse_model::std_deviation(&v, mean).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_new_normalized_value() {
+        let nv: NormalizedValue<f32> = NormalizedValue::new();
+
+        assert_eq!(nv.current, None);
+        assert_eq!(nv.min(), None);
+        assert_eq!(nv.max(), None);
+        assert_eq!(nv.get(), None);
+        assert_eq!(nv.deviation, None);
+        assert_eq!(nv.percent(), None);
+        assert_eq!(nv.normalize(nv.get()), None);
+        assert_eq!(nv.history.len(), 0);
+    }
+
+    #[test]
+    fn test_single_normalized_value() {
+        let mut nv: NormalizedValue<f64> = NormalizedValue::new();
+        nv.set(1.0);
+
+        assert_eq!(nv.current, Some(1.0));
+        assert_eq!(nv.min(), Some(1.0));
+        assert_eq!(nv.max(), Some(1.0));
+        assert_eq!(nv.get(), Some(1.0));
+        assert_eq!(nv.mean(), Some(1.0));
+        assert_eq!(nv.deviation(), Some(0.0));
+        assert_eq!(nv.percent(), Some(0.0));
+        //        assert_eq!(nv.normalize(nv.get()), Some(std::f64::NAN)); //TODO Is this right? The normalized value blows out with a single value
+        assert_eq!(nv.history.len(), 1);
+    }
+
+    #[test]
+    fn test_two_normalized_values_second_normalized() {
+        let mut nv: NormalizedValue<f64> = NormalizedValue::new();
+        nv.set(1.0);
+        nv.set(3.0);
+
+        assert_eq!(nv.current, Some(3.0));
+        assert_eq!(nv.min(), Some(1.0));
+        assert_eq!(nv.max(), Some(3.0));
+        assert_eq!(nv.get(), Some(3.0));
+        assert_eq!(nv.mean(), Some(2.0));
+        assert_eq!(nv.deviation(), Some(1.0));
+        //        assert_eq!(nv.normalize(nv.get()), Some(std::f64::NAN)); //TODO Is this right? The normalized value blows out with a single value
+        assert_eq!(nv.history.len(), 2);
+    }
+
+    #[test]
+    fn test_normalized_value_history() {
+        const LENGTH: usize = 120;
+        let mut nv: NormalizedValue<f64> = NormalizedValue::new();
+
+        for i in 0..LENGTH {
+            nv.set(i as f64);
+        }
+
+        assert_eq!(nv.min(), Some(0.0));
+        assert_eq!(nv.max(), Some((LENGTH - 1) as f64));
+        assert_eq!(nv.get(), Some((LENGTH - 1) as f64));
+        assert_eq!(nv.mean(), Some(59.5));
+        assert_eq!(nv.deviation(), Some(34.63981331743384));
+        assert_eq!(nv.normalize(nv.get()), Some(1.7176766934264711)); // UGLY VALUE?
+        assert_eq!(nv.normalize(nv.min()), Some(-1.7176766934264711)); // UGLY VALUE?
+        assert_eq!(nv.normalize(nv.max()), Some(1.7176766934264711)); // UGLY VALUE?
+        assert_eq!(nv.history.len(), 120);
+        assert_eq!(nv.percent_normalization_complete(), 1.0);
+    }
+
+    #[test]
+    fn test_normalized_value_history_with_negative_values() {
+        const LENGTH: usize = 100;
+        let mut nv: NormalizedValue<f32> = NormalizedValue::new();
+
+        // Twice as many values as the initial normalization stage. All normlalization values are negative
+        for i in -100..101 {
+            nv.set(i as f32);
+        }
+
+        assert_eq!(nv.min(), Some(-100.0));
+        assert_eq!(nv.max(), Some(100.0));
+        assert_eq!(nv.get(), Some(100.0));
+        assert_eq!(nv.mean(), Some(-40.5)); // UGLY VALUE FROM NORMALIZATION DOES NOT REPRESENT LATER VALUES
+        assert_eq!(nv.deviation(), Some(34.63981331743384)); // SAME DEVIATION AS THE PREVIOUS TEST? HOW?
+        assert_eq!(nv.normalize(nv.get()), Some(4.0560265)); // UGLY VALUE?
+        assert_eq!(nv.normalize(nv.min()), Some(-1.7176768)); // UGLY VALUE? SAME AS PREVIOUS TEST? HOW?
+        assert_eq!(nv.normalize(nv.max()), Some(4.0560265)); // UGLY VALUE?
+        assert_eq!(nv.history.len(), 120);
     }
 }

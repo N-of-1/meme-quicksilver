@@ -256,6 +256,8 @@ fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
     );
 }
 
+// TODO Add maximum slew rate to visualized value for mandala to change "smoothly"
+
 /// Calculate the index of the image we will display for a percent value [0.0, 1.0] => [0, max)
 fn percent_to_index(percent: f32, max: usize) -> usize {
     //TODO FIXME hack
@@ -278,8 +280,6 @@ fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mu
         }
         _ => draw_eeg_values_view(model, window, eeg_view_state), // Nothing to display- help the user setup
     };
-
-    for i in 0..10 {}
 }
 
 /// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
