@@ -1,6 +1,6 @@
 use crate::muse_packet::*;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-use std::iter::{Map, Sum};
+use std::iter::Sum;
 /// Muse data model and associated message handling from muse_packet
 // #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::sync::mpsc::SendError;
@@ -12,10 +12,10 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::{convert::From, time::Duration};
 
-const FOREHEAD_COUNTDOWN: i32 = 30; // 60th of a second counts
-const BLINK_COUNTDOWN: i32 = 30;
-const CLENCH_COUNTDOWN: i32 = 30;
-const HISTORY_LENGTH: usize = 120; // Used to trunacte ArousalHistory and ValenceHistory length - this is the number of samples in the normalization phase
+const FOREHEAD_COUNTDOWN: i32 = 5; // 60th of a second counts
+const BLINK_COUNTDOWN: i32 = 5;
+const CLENCH_COUNTDOWN: i32 = 5;
+const HISTORY_LENGTH: usize = 240; // Used to trunacte ArousalHistory and ValenceHistory length - this is the number of samples in the normalization phase
 const TP9: usize = 0; // Muse measurment array index for first electrode
 const AF7: usize = 1; // Muse measurment array index for second electrode
 const AF8: usize = 2; // Muse measurment array index for third electrode
@@ -135,10 +135,10 @@ mod inner_receiver {
     }
 }
 
-pub struct NormalizedValue<T: Float> {
-    current: T,
-    min: T,
-    max: T,
+pub struct NormalizedValue<T: Float + From<i16>> {
+    current: Option<T>,
+    min: Option<T>,
+    max: Option<T>,
     mean: Option<T>,
     deviation: Option<T>,
     history: Vec<T>,
@@ -150,26 +150,29 @@ where
 {
     pub fn new() -> Self {
         Self {
-            current: 0.into(),
-            min: T::max_value(),
-            max: T::min_value(),
+            current: None,
+            min: None,
+            max: None,
             mean: None,
             deviation: None,
             history: Vec::new(),
         }
     }
 
-    // Set the value if it is a change and a rational number
+    // Set the value if it is a change and a rational number. Returns true if the value is accepted as finite and a change from the previous value
     pub fn set(&mut self, val: T) -> bool {
-        let acceptable_new_value = val.is_finite() && val != self.current;
+        let acceptable_new_value = match self.current {
+            Some(current_value) => val.is_finite() && val != current_value,
+            None => val.is_finite(),
+        };
 
         if acceptable_new_value {
-            self.current = val;
-            if val > self.max {
-                self.max = val;
+            self.current = Some(val);
+            if !self.max.is_some() || self.max.unwrap() < val {
+                self.max = Some(val);
             }
-            if val < self.min {
-                self.min = val;
+            if !self.min.is_some() || self.min.unwrap() > val {
+                self.min = Some(val);
             }
             if self.history.len() < HISTORY_LENGTH {
                 self.history.push(val);
@@ -185,13 +188,43 @@ where
         self.history.len() as f32 / HISTORY_LENGTH as f32
     }
 
-    // Return the current value normalized based on the initial calibration period
-    pub fn normalized_value(&self) -> Option<T> {
-        let mean_and_deviation = (self.mean, self.deviation);
+    pub fn get(&self) -> Option<T> {
+        self.current
+    }
+    pub fn min(&self) -> Option<T> {
+        self.min
+    }
+    pub fn max(&self) -> Option<T> {
+        self.max
+    }
 
-        match mean_and_deviation {
-            (Some(mean), Some(deviation)) => Some((self.current - mean) / deviation),
-            _ => None,
+    pub fn percent(&self) -> Option<T> {
+        match self.current {
+            Some(v) => {
+                let v100: T = (v - self.min.unwrap()) * 100.into();
+                let range: T = self.max.unwrap() - self.min().unwrap();
+                let r = v100 / range;
+                match r.is_finite() {
+                    true => Some(r),
+                    false => Some(0.into()),
+                }
+            }
+            None => None,
+        }
+    }
+
+    // Return the current value normalized based on the initial calibration period
+    pub fn normalize(&self, val: Option<T>) -> Option<T> {
+        match val {
+            Some(v) => {
+                let mean_and_deviation = (self.mean, self.deviation);
+
+                match mean_and_deviation {
+                    (Some(mean), Some(deviation)) => Some((v - mean) / deviation),
+                    _ => None,
+                }
+            }
+            None => None,
         }
     }
 }
@@ -350,19 +383,29 @@ impl MuseModel {
         }
 
         if updated_numeric_values {
-            self.update_arousal();
-            self.update_valence();
-            println!(
-                "%Normalized {}   Abs Valence: {}       Abs Arousal: {}",
-                self.valence.percent_normalization_complete(),
-                self.valence.current,
-                self.arousal.current
-            );
-            if let (Some(valence), Some(arousal)) = (
-                self.valence.normalized_value(),
-                self.arousal.normalized_value(),
-            ) {
-                println!("  N Valence: {}       Arousal: {}", valence, arousal);
+            let (ua, uv) = (self.update_arousal(), self.update_valence());
+
+            if let (Some(valence), Some(arousal)) = (self.valence.get(), self.arousal.get()) {
+                let normalized_valence = self.valence.normalize(Some(valence)).unwrap();
+                let normalized_valence_min = self.valence.normalize(self.valence.min()).unwrap();
+                let normalized_valence_max = self.valence.normalize(self.valence.max()).unwrap();
+                let normalized_arousal = self.arousal.normalize(Some(arousal)).unwrap();
+                let normalized_arousal_min = self.arousal.normalize(self.arousal.min()).unwrap();
+                let normalized_arousal_max = self.arousal.normalize(self.arousal.max()).unwrap();
+                println!(
+                    "Normalized:{}%  V:{}%  A:{}%   NV:({},{},{})   NA:({},{},{})",
+                    (self.valence.percent_normalization_complete() * 100.) as i16,
+                    self.valence.percent().unwrap() as i16,
+                    self.arousal.percent().unwrap() as i16,
+                    normalized_valence_min,
+                    normalized_valence,
+                    normalized_valence_max,
+                    normalized_arousal_min,
+                    normalized_arousal,
+                    normalized_arousal_max
+                );
+            } else {
+                println!("Update arousal: {}    Update valence: {}", ua, uv);
             }
         }
     }
@@ -484,19 +527,3 @@ impl MuseModel {
         }
     }
 }
-
-// Pull new data from the OSC Socket (if there is one on this build target)
-// pub fn osc_socket_receive(muse_model: &mut MuseModel) {
-// if let Some(receiver) = muse_model.rx {
-//     let receivables: Vec<(nannou_osc::Packet, std::net::SocketAddr)> =
-//         receiver.try_iter().collect();
-
-//     for (packet, addr) in receivables {
-//         let muse_messages = parse_muse_packet(addr, &packet);
-
-//         for muse_message in muse_messages {
-//             muse_model.handle_message(&muse_message);
-//         }
-//     }
-// }
-// }

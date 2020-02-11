@@ -73,7 +73,7 @@ const SPIDER_POINT_RADIUS: f32 = 10.0; // Size of the dot on each graph point
 const SPIDER_GRAPH_AXIS_LENGTH: f32 = 200.0; // Distance from center to pentagon tips
 const SPIDER_GRAPH_LABEL_OFFSET: Vector = Vector { x: -160., y: -160. }; // Shift labels up and right from the center of the spider graph
 const FREQUENCY_LABEL_OFFSET: Vector = Vector { x: 0.5, y: -1.5 }; // Shift letters up slightly to center in the circle
-const SPIDER_SCALE: f32 = 100.0; // Make alpha etc larger
+const SPIDER_SCALE: f32 = 200.0; // Make alpha etc larger for display purposes
 
 const IMAGE_SET_SIZE: usize = 10;
 struct ImageSet {
@@ -101,15 +101,17 @@ impl ImageSet {
     }
 
     fn draw(&mut self, image_number: usize, window: &mut Window) {
-        self.images[image_number].execute(|image| {
-            window.draw(
-                &image
-                    .area()
-                    .with_center((SCREEN_SIZE.0 / 2.0, SCREEN_SIZE.1 / 2.0)),
-                Img(&image),
-            );
-            Ok(())
-        });
+        self.images[image_number]
+            .execute(|image| {
+                window.draw(
+                    &image
+                        .area()
+                        .with_center((SCREEN_SIZE.0 / 2.0, SCREEN_SIZE.1 / 2.0)),
+                    Img(&image),
+                );
+                Ok(())
+            })
+            .expect("Can not draw image from ImageSet");
     }
 }
 
@@ -254,13 +256,33 @@ fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
     );
 }
 
-fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {
-    //TODO update based on emotion and excitement
+/// Calculate the index of the image we will display for a percent value [0.0, 1.0] => [0, max)
+fn percent_to_index(percent: f32, max: usize) -> usize {
+    assert!(
+        percent >= 0.0,
+        "Value under expected range for a percentage"
+    );
+    assert!(
+        percent <= 100.0,
+        "Value over expected range for a percentage"
+    );
 
-    for i in 0..10 {
-        eeg_view_state.pos_neg.draw(i, window);
-        eeg_view_state.calm_ext.draw(i, window);
-    }
+    ((percent * max as f32) as usize).min(max - 1)
+}
+
+fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {
+    match (model.valence.percent(), model.arousal.percent()) {
+        (Some(val), Some(arou)) => {
+            let v: usize = percent_to_index(val, 10);
+            let a: usize = percent_to_index(arou, 10);
+
+            eeg_view_state.pos_neg.draw(v, window);
+            eeg_view_state.calm_ext.draw(a, window);
+        }
+        _ => draw_eeg_values_view(model, window, eeg_view_state), // Nothing to display- help the user setup
+    };
+
+    for i in 0..10 {}
 }
 
 /// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
@@ -468,6 +490,34 @@ mod tests {
         let next_i = 0;
 
         assert_eq!(next_i, wrap_eeg_derived_value_index(i));
+    }
+
+    #[test]
+    fn test_percent_to_index() {
+        let expected = 9;
+        let val = 1.0;
+        let max = 10;
+
+        assert_eq!(percent_to_index(val, max), expected);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_panic_underrange_percent_to_index() {
+        let expected = 9;
+        let val = -0.1;
+        let max = 10;
+
+        assert_eq!(percent_to_index(val, max), expected);
+    }
+
+    #[test]
+    fn test_panic_overrange_percent_to_index() {
+        let expected = 9;
+        let val = 1.1;
+        let max = 10;
+
+        assert_eq!(percent_to_index(val, max), expected);
     }
 }
 
