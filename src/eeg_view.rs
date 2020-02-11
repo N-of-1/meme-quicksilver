@@ -73,7 +73,7 @@ const SPIDER_POINT_RADIUS: f32 = 10.0; // Size of the dot on each graph point
 const SPIDER_GRAPH_AXIS_LENGTH: f32 = 200.0; // Distance from center to pentagon tips
 const SPIDER_GRAPH_LABEL_OFFSET: Vector = Vector { x: -160., y: -160. }; // Shift labels up and right from the center of the spider graph
 const FREQUENCY_LABEL_OFFSET: Vector = Vector { x: 0.5, y: -1.5 }; // Shift letters up slightly to center in the circle
-const SPIDER_SCALE: f32 = 200.0; // Make alpha etc larger for display purposes
+const SPIDER_SCALE: f32 = 150.0; // Make alpha etc larger for display purposes
 
 const IMAGE_SET_SIZE: usize = 10;
 struct ImageSet {
@@ -258,16 +258,13 @@ fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
 
 /// Calculate the index of the image we will display for a percent value [0.0, 1.0] => [0, max)
 fn percent_to_index(percent: f32, max: usize) -> usize {
-    assert!(
-        percent >= 0.0,
-        "Value under expected range for a percentage"
-    );
-    assert!(
-        percent <= 100.0,
-        "Value over expected range for a percentage"
-    );
+    //TODO FIXME hack
+    let r = percent.max(0.0).min(1.0);
 
-    ((percent * max as f32) as usize).min(max - 1)
+    assert!(r >= 0.0, "Value under expected range for a percentage");
+    assert!(r <= 100.0, "Value over expected range for a percentage");
+
+    ((r * max as f32) as usize).min(max - 1)
 }
 
 fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {

@@ -202,8 +202,9 @@ where
         match self.current {
             Some(v) => {
                 let v100: T = (v - self.min.unwrap()) * 100.into();
-                let range: T = self.max.unwrap() - self.min().unwrap();
+                let range: T = self.max().unwrap() - self.min().unwrap();
                 let r = v100 / range;
+
                 match r.is_finite() {
                     true => Some(r),
                     false => Some(0.into()),
@@ -333,7 +334,7 @@ impl MuseModel {
                 touching_forehead_countdown: 0,
                 jaw_clench_countdown: 0,
                 scale: 1.5, // Make the circles relatively larger or smaller
-                display_type: DisplayType::EegValues, // Current drawing mode
+                display_type: DisplayType::Mandala, // Current drawing mode
                 arousal: NormalizedValue::new(),
                 valence: NormalizedValue::new(),
             },
