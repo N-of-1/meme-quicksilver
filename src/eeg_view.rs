@@ -4,7 +4,7 @@ use core::f32::consts::PI;
 
 use quicksilver::{
     geom::{Circle, Vector},
-    graphics::{Background::Col, Color},
+    graphics::{Background::Col, Color, Image},
     lifecycle::Window,
 };
 
@@ -75,6 +75,44 @@ const SPIDER_GRAPH_LABEL_OFFSET: Vector = Vector { x: -160., y: -160. }; // Shif
 const FREQUENCY_LABEL_OFFSET: Vector = Vector { x: 0.5, y: -1.5 }; // Shift letters up slightly to center in the circle
 const SPIDER_SCALE: f32 = 100.0; // Make alpha etc larger
 
+const IMAGE_SET_SIZE: usize = 10;
+struct ImageSet {
+    images: [Asset<Image>; IMAGE_SET_SIZE],
+}
+
+fn filename(filename_prefix: &str, i: usize) -> String {
+    let mut filename = String::new();
+    filename.push_str(filename_prefix);
+    filename.push_str(&format!("{}", i));
+    filename.push_str(".png");
+
+    filename
+}
+
+impl ImageSet {
+    fn new(filename_prefix: &str) -> Self {
+        let mut i: usize = 0;
+        let images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
+                i += 1;
+                i - 1
+            }))); 10];
+
+        Self { images }
+    }
+
+    fn draw(&mut self, image_number: usize, window: &mut Window) {
+        self.images[image_number].execute(|image| {
+            window.draw(
+                &image
+                    .area()
+                    .with_center((SCREEN_SIZE.0 / 2.0, SCREEN_SIZE.1 / 2.0)),
+                Img(&image),
+            );
+            Ok(())
+        });
+    }
+}
+
 pub struct EegViewState {
     touching_forehead_box: LabeledBox,
     blink_box: LabeledBox,
@@ -82,7 +120,7 @@ pub struct EegViewState {
     graph_label_images: [Asset<Image>; N_EEG_CHANNELS],
     frequency_label_images: [Asset<Image>; N_EEG_DERIVED_VALUES],
     calm_ext: ImageSet,
-    neg_pos: ImageSet,
+    pos_neg: ImageSet,
 }
 
 impl EegViewState {
@@ -90,7 +128,7 @@ impl EegViewState {
         assert!(N_EEG_DERIVED_VALUES == EEG_COLORS.len());
         assert!(N_EEG_DERIVED_VALUES == EEG_FREQUENCY_BAND_LABELS.len());
 
-        let mut graph_label_images: [Asset<Image>; N_EEG_CHANNELS] = [
+        let graph_label_images: [Asset<Image>; N_EEG_CHANNELS] = [
             Asset::new(Font::load(FONT_EXTRA_BOLD).and_then(|font| {
                 result(font.render(
                     EEG_CHANNEL_LABELS[0],
@@ -117,7 +155,7 @@ impl EegViewState {
             })),
         ];
 
-        let mut frequency_label_images: [Asset<Image>; N_EEG_DERIVED_VALUES] = [
+        let frequency_label_images: [Asset<Image>; N_EEG_DERIVED_VALUES] = [
             Asset::new(Font::load(FONT_MULI).and_then(|font| {
                 result(font.render(
                     EEG_FREQUENCY_BAND_LABELS[0],
@@ -177,8 +215,8 @@ impl EegViewState {
             ),
             graph_label_images,
             frequency_label_images,
-            calm_ext: ImageSet::new("calm_ext"),
-            neg_pos: ImageSet::new("neg_pos"),
+            calm_ext: ImageSet::new("calm_ex"),
+            pos_neg: ImageSet::new("pos_neg"),
         }
     }
 }
@@ -186,96 +224,47 @@ impl EegViewState {
 /// Render concenctric circules associated with alpha, beta, gamma..
 pub fn draw_view(muse_model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {
     match muse_model.display_type {
-        DisplayType::FourCircles => draw_four_circles_view(muse_model, window),
+        DisplayType::Mandala => draw_mandala_view(muse_model, window, eeg_view_state),
         DisplayType::Dowsiness => draw_drowsiness_view(muse_model, window),
-        DisplayType::Emotion => draw_emotion_view(muse_model, window),
+        DisplayType::Emotion => draw_emotion_sun_view(muse_model, window),
         DisplayType::EegValues => draw_eeg_values_view(muse_model, window, eeg_view_state),
     }
 }
 
 /// A bigger yellow circle indiates greater happiness. Maybe.
-fn draw_emotion_view(model: &MuseModel, window: &mut Window) {
-    // let global_theta = muse_model::average_from_four_electrodes(&model.theta);
-    // let asymm = super.valence(&model.alpha, &model.theta);
-    // let arousal_index = arousal_index(&model.theta, &model.alpha);
+fn draw_emotion_sun_view(model: &MuseModel, window: &mut Window) {
+    let asymm = model.calc_absolute_valence();
 
-    // //TODO Change this to Mandala display
-
-    // draw_polygon(&COLOR_EMOTION, asymm / 5.0, window, model.scale, (0.0, 0.0));
+    draw_circle(&COLOR_EMOTION, asymm / 5.0, window, model.scale, (0.0, 0.0));
 }
 
 fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
-    // let lizard_mind = (average_from_four_electrodes(&model.theta)
-    //     + average_from_four_electrodes(&model.delta))
-    //     / 2.0;
-    // draw_polygon(&COLOR_THETA, lizard_mind, window, model.scale, (0.0, 0.0));
-    // draw_polygon(
-    //     &COLOR_ALPHA,
-    //     average_from_four_electrodes(&model.alpha),
-    //     window,
-    //     model.scale,
-    //     (0.0, 0.0),
-    // );
-}
+    let lizard_mind = (muse_model::average_from_four_electrodes(&model.theta)
+        + muse_model::average_from_four_electrodes(&model.delta))
+        / 2.0;
 
-fn draw_four_circles_view(model: &MuseModel, window: &mut Window) {
-    const DISTANCE: f32 = 100.0;
-    const LEFT_FRONT: (f32, f32) = (-DISTANCE, -DISTANCE);
-    const RIGHT_FRONT: (f32, f32) = (DISTANCE, -DISTANCE);
-    const RIGHT_REAR: (f32, f32) = (DISTANCE, DISTANCE);
-    const LEFT_REAR: (f32, f32) = (-DISTANCE, DISTANCE);
+    draw_circle(&COLOR_THETA, lizard_mind, window, model.scale, (0.0, 0.0));
 
-    draw_concentric_polygons(&model, window, 0, LEFT_REAR);
-    draw_concentric_polygons(&model, window, 1, LEFT_FRONT);
-    draw_concentric_polygons(&model, window, 2, RIGHT_FRONT);
-    draw_concentric_polygons(&model, window, 3, RIGHT_REAR);
-}
-
-fn draw_concentric_polygons(
-    model: &MuseModel,
-    window: &mut Window,
-    index: usize,
-    offset: (f32, f32),
-) {
-    draw_polygon(
+    draw_circle(
         &COLOR_ALPHA,
-        model.alpha[index],
+        muse_model::average_from_four_electrodes(&model.alpha),
         window,
         model.scale,
-        offset,
+        (0.0, 0.0),
     );
-    draw_polygon(&COLOR_BETA, model.beta[index], window, model.scale, offset);
-    draw_polygon(
-        &COLOR_GAMMA,
-        model.gamma[index],
-        window,
-        model.scale,
-        offset,
-    );
-    draw_polygon(
-        &COLOR_DELTA,
-        model.delta[index],
-        window,
-        model.scale,
-        offset,
-    );
-    draw_polygon(
-        &COLOR_THETA,
-        model.theta[index],
-        window,
-        model.scale,
-        offset,
-    );
+}
+
+fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {
+    //TODO update based on emotion and excitement
+
+    for i in 0..10 {
+        eeg_view_state.pos_neg.draw(i, window);
+        eeg_view_state.calm_ext.draw(i, window);
+    }
 }
 
 /// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
-fn draw_polygon(
-    line_color: &Color,
-    value: f32,
-    window: &mut Window,
-    scale: f32,
-    shift: (f32, f32),
-) {
+fn draw_circle(line_color: &Color, value: f32, window: &mut Window, scale: f32, shift: (f32, f32)) {
     let screen_size = window.screen_size();
     let scale = screen_size.x / scale;
     let radius = value * scale;

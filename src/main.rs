@@ -19,7 +19,7 @@ extern crate quicksilver;
 extern crate log;
 
 use arr_macro::arr;
-use eeg_view::{EegViewState, LabeledBox};
+use eeg_view::EegViewState;
 use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
     combinators::result,
@@ -276,7 +276,7 @@ impl State for AppState {
 
         // F1
         if window.keyboard()[Key::F1] == ButtonState::Pressed {
-            self.muse_model.display_type = DisplayType::FourCircles;
+            self.muse_model.display_type = DisplayType::Mandala;
         }
 
         // F2
@@ -395,32 +395,6 @@ impl State for AppState {
     fn handle_error(error: quicksilver::Error) {
         error!("Unhandled error: {:?}", error);
         panic!("Unhandled error: {:?}", error);
-    }
-}
-
-const IMAGE_SET_SIZE: usize = 10;
-struct ImageSet {
-    images: [Asset<Image>; IMAGE_SET_SIZE],
-}
-
-fn filename(filename_prefix: &str, i: usize) -> String {
-    let mut filename = String::new();
-    filename.push_str(filename_prefix);
-    filename.push_str(&format!("{}", i));
-    filename.push_str(".png");
-
-    filename
-}
-
-impl ImageSet {
-    fn new(filename_prefix: &str) -> Self {
-        let mut i: usize = 0;
-        let images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
-                i += 1;
-                i - 1
-            }))); 10];
-
-        Self { images }
     }
 }
 

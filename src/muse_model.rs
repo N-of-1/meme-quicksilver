@@ -35,7 +35,7 @@ const TP10: usize = 3; // Muse measurment array index for fourth electrode
 /// The different display modes supported for live screen updates based on Muse EEG signals
 #[derive(Clone, Debug)]
 pub enum DisplayType {
-    FourCircles,
+    Mandala,
     Dowsiness,
     Emotion,
     EegValues,
@@ -269,7 +269,7 @@ where
 }
 
 /// Average the raw values
-fn average_from_four_electrodes(x: &[f32; 4]) -> f32 {
+pub fn average_from_four_electrodes(x: &[f32; 4]) -> f32 {
     (x[0] + x[1] + x[2] + x[3]) / 4.0
 }
 
@@ -344,7 +344,7 @@ impl MuseModel {
         for muse_message in muse_messages {
             updated_numeric_values = updated_numeric_values
                 || self
-                    .handle_message(&muse_message)
+                    .handle_muse_message(&muse_message)
                     .expect("Could not receive OSC message");
             self.most_recent_message_receive_time = muse_message.time;
         }
@@ -374,36 +374,33 @@ impl MuseModel {
     }
 
     /// Positive-negative balance of emotion
-    fn absolute_valence(&self) -> f32 {
+    pub fn calc_absolute_valence(&self) -> f32 {
         self.front_assymetry() / average_from_four_electrodes(&self.theta)
     }
 
-    /// Level of emotional intensity
-    fn abolute_arousal(&self) -> f32 {
+    /// Level of emotional intensity based on other, more primitive values
+    pub fn calc_abolute_arousal(&self) -> f32 {
         (self.alpha[TP9] + self.alpha[TP10]) / (self.theta[TP9] + self.theta[AF7])
     }
 
     /// Calculate the current arousal value and add it to the length-limited history
     pub fn update_arousal(&mut self) -> bool {
-        let a = self.abolute_arousal();
-
-        self.arousal.set(a)
+        self.arousal.set(self.calc_abolute_arousal())
     }
 
     /// Calculate the current valence value and add it to the length-limited history
     pub fn update_valence(&mut self) -> bool {
-        let v = self.absolute_valence();
-
-        self.valence.set(v)
+        self.valence.set(self.calc_absolute_valence())
     }
 
+    /// Send a value to the connected rx_eeg receiver
     fn send(&self, timed_muse_message: TimedMuseMessage) {
         let success = self.tx_eeg.send(timed_muse_message);
         assert!(!success.is_err(), "Can not send message to local receiver");
     }
 
     /// Update state based on an incoming message
-    fn handle_message(
+    fn handle_muse_message(
         &mut self,
         muse_message: &MuseMessage,
     ) -> Result<bool, SendError<(Duration, MuseMessageType)>> {
