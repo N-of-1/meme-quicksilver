@@ -331,8 +331,9 @@ where
 }
 
 /// Average the raw values
-pub fn average_from_four_electrodes(x: &[f32; 4]) -> f32 {
-    (x[0] + x[1] + x[2] + x[3]) / 4.0
+pub fn average_from_front_electrodes(x: &[f32; 4]) -> f32 {
+    //(x[0] + x[1] + x[2] + x[3]) / 4.0
+    (x[1] + x[2]) / 2.0
 }
 
 impl MuseModel {
@@ -418,22 +419,10 @@ impl MuseModel {
                 (self.valence.moving_average(), self.arousal.moving_average())
             {
                 let normalized_valence = self.valence.normalize(Some(valence)).unwrap();
-                let normalized_valence_min = self.valence.normalize(self.valence.min()).unwrap();
-                let normalized_valence_max = self.valence.normalize(self.valence.max()).unwrap();
                 let normalized_arousal = self.arousal.normalize(Some(arousal)).unwrap();
-                let normalized_arousal_min = self.arousal.normalize(self.arousal.min()).unwrap();
-                let normalized_arousal_max = self.arousal.normalize(self.arousal.max()).unwrap();
                 println!(
-                    "Normalized:{}%  V:{}%  A:{}%   NV:({},{},{})   NA:({},{},{})",
-                    (self.valence.percent_normalization_complete() * 100.) as i16,
-                    self.valence.percent().unwrap() as i16,
-                    self.arousal.percent().unwrap() as i16,
-                    normalized_valence_min,
-                    normalized_valence,
-                    normalized_valence_max,
-                    normalized_arousal_min,
-                    normalized_arousal,
-                    normalized_arousal_max
+                    "Valence: {}   Arousal:{}",
+                    normalized_valence, normalized_arousal,
                 );
             } else {
                 println!("Update arousal: {}    Update valence: {}", ua, uv);
@@ -449,7 +438,7 @@ impl MuseModel {
 
     /// Positive-negative balance of emotion
     pub fn calc_absolute_valence(&self) -> f32 {
-        self.front_assymetry() / average_from_four_electrodes(&self.theta)
+        self.front_assymetry() / average_from_front_electrodes(&self.theta)
     }
 
     /// Level of emotional intensity based on other, more primitive values

@@ -245,15 +245,15 @@ fn draw_emotion_sun_view(model: &MuseModel, window: &mut Window) {
 }
 
 fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
-    let lizard_mind = (muse_model::average_from_four_electrodes(&model.theta)
-        + muse_model::average_from_four_electrodes(&model.delta))
+    let lizard_mind = (muse_model::average_from_front_electrodes(&model.theta)
+        + muse_model::average_from_front_electrodes(&model.delta))
         / 2.0;
 
     draw_circle(&COLOR_THETA, lizard_mind, window, model.scale, (0.0, 0.0));
 
     draw_circle(
         &COLOR_ALPHA,
-        muse_model::average_from_four_electrodes(&model.alpha),
+        muse_model::average_from_front_electrodes(&model.alpha),
         window,
         model.scale,
         (0.0, 0.0),
@@ -261,20 +261,6 @@ fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
 }
 
 // TODO Add maximum slew rate to visualized value for mandala to change "smoothly"
-
-/// Calculate the index of the image we will display for a percent value [0.0, 1.0] => [0, max)
-fn percent_to_index(percent: f32, max: usize) -> usize {
-    assert!(
-        percent >= 0.0,
-        "Value under expected range for a percentage"
-    );
-    assert!(
-        percent <= 100.0,
-        "Value over expected range for a percentage"
-    );
-
-    ((percent * max as f32) as usize).min(max - 1)
-}
 
 fn range_raw_values_to_0_to_9(val: f32) -> usize {
     ((val + 3.0) / 0.6).max(0.0).min(9.0) as usize
@@ -290,8 +276,24 @@ fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mu
             let vma = range_raw_values_to_0_to_9(val);
             let ama = range_raw_values_to_0_to_9(arou);
 
-            eeg_view_state.pos_neg.draw(vma, window);
-            eeg_view_state.calm_ext.draw(ama, window);
+            if vma > eeg_view_state.valence_index + 1 {
+                eeg_view_state.valence_index = (eeg_view_state.valence_index + 1).min(9);
+            } else if vma < eeg_view_state.valence_index - 1 {
+                eeg_view_state.valence_index = (eeg_view_state.valence_index - 1).max(0);
+            }
+
+            if ama > eeg_view_state.arousal_index + 1 {
+                eeg_view_state.arousal_index = (eeg_view_state.arousal_index + 1).min(9);
+            } else if ama < eeg_view_state.valence_index - 1 {
+                eeg_view_state.arousal_index = (eeg_view_state.arousal_index - 1).max(0);
+            }
+
+            eeg_view_state
+                .pos_neg
+                .draw(eeg_view_state.valence_index, window);
+            eeg_view_state
+                .calm_ext
+                .draw(eeg_view_state.arousal_index, window);
         }
         _ => draw_eeg_values_view(model, window, eeg_view_state), // Nothing to display- help the user setup
     };
