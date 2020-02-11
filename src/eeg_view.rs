@@ -123,6 +123,8 @@ pub struct EegViewState {
     frequency_label_images: [Asset<Image>; N_EEG_DERIVED_VALUES],
     calm_ext: ImageSet,
     pos_neg: ImageSet,
+    valence_index: usize,
+    arousal_index: usize,
 }
 
 impl EegViewState {
@@ -219,6 +221,8 @@ impl EegViewState {
             frequency_label_images,
             calm_ext: ImageSet::new("calm_ex"),
             pos_neg: ImageSet::new("pos_neg"),
+            valence_index: 5,
+            arousal_index: 5,
         }
     }
 }
@@ -260,23 +264,34 @@ fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
 
 /// Calculate the index of the image we will display for a percent value [0.0, 1.0] => [0, max)
 fn percent_to_index(percent: f32, max: usize) -> usize {
-    //TODO FIXME hack
-    let r = percent.max(0.0).min(1.0);
+    assert!(
+        percent >= 0.0,
+        "Value under expected range for a percentage"
+    );
+    assert!(
+        percent <= 100.0,
+        "Value over expected range for a percentage"
+    );
 
-    assert!(r >= 0.0, "Value under expected range for a percentage");
-    assert!(r <= 100.0, "Value over expected range for a percentage");
+    ((percent * max as f32) as usize).min(max - 1)
+}
 
-    ((r * max as f32) as usize).min(max - 1)
+fn range_raw_values_to_0_to_9(val: f32) -> usize {
+    ((val + 3.0) / 0.6).max(0.0).min(9.0) as usize
 }
 
 fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {
-    match (model.valence.percent(), model.arousal.percent()) {
+    match (
+        model.valence.moving_average(),
+        model.arousal.moving_average(),
+    ) {
         (Some(val), Some(arou)) => {
-            let v: usize = percent_to_index(val, 10);
-            let a: usize = percent_to_index(arou, 10);
+            // Shift raw values from -3.0 to 3.0 range into 0..9 (camped)
+            let vma = range_raw_values_to_0_to_9(val);
+            let ama = range_raw_values_to_0_to_9(arou);
 
-            eeg_view_state.pos_neg.draw(v, window);
-            eeg_view_state.calm_ext.draw(a, window);
+            eeg_view_state.pos_neg.draw(vma, window);
+            eeg_view_state.calm_ext.draw(ama, window);
         }
         _ => draw_eeg_values_view(model, window, eeg_view_state), // Nothing to display- help the user setup
     };
@@ -481,40 +496,64 @@ impl LabeledBox {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_wrap_eeg_derived_value_index() {
-        let i = 4;
-        let next_i = 0;
+    // #[test]
+    // fn test_wrap_eeg_derived_value_index() {
+    //     let i = 4;
+    //     let next_i = 0;
 
-        assert_eq!(next_i, wrap_eeg_derived_value_index(i));
+    //     assert_eq!(next_i, wrap_eeg_derived_value_index(i));
+    // }
+
+    // #[test]
+    // fn test_percent_to_index() {
+    //     let expected = 9;
+    //     let val = 1.0;
+    //     let max = 10;
+
+    //     assert_eq!(percent_to_index(val, max), expected);
+    // }
+
+    // #[test]
+    // #[should_panic]
+    // fn test_panic_underrange_percent_to_index() {
+    //     let expected = 9;
+    //     let val = -0.1;
+    //     let max = 10;
+
+    //     assert_eq!(percent_to_index(val, max), expected);
+    // }
+
+    // #[test]
+    // fn test_panic_overrange_percent_to_index() {
+    //     let expected = 9;
+    //     let val = 1.1;
+    //     let max = 10;
+
+    //     assert_eq!(percent_to_index(val, max), expected);
+    // }
+
+    #[test]
+    fn test_range_small_number() {
+        let expected = 0;
+        let val = -100.0;
+
+        assert_eq!(range_raw_values_to_0_to_9(val), expected);
     }
 
     #[test]
-    fn test_percent_to_index() {
+    fn test_range_large_number() {
         let expected = 9;
-        let val = 1.0;
-        let max = 10;
+        let val = 100.0;
 
-        assert_eq!(percent_to_index(val, max), expected);
+        assert_eq!(range_raw_values_to_0_to_9(val), expected);
     }
 
     #[test]
-    #[should_panic]
-    fn test_panic_underrange_percent_to_index() {
-        let expected = 9;
-        let val = -0.1;
-        let max = 10;
+    fn test_range_middle_number() {
+        let expected = 5;
+        let val = 0.0;
 
-        assert_eq!(percent_to_index(val, max), expected);
-    }
-
-    #[test]
-    fn test_panic_overrange_percent_to_index() {
-        let expected = 9;
-        let val = 1.1;
-        let max = 10;
-
-        assert_eq!(percent_to_index(val, max), expected);
+        assert_eq!(range_raw_values_to_0_to_9(val), expected);
     }
 }
 
