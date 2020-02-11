@@ -257,8 +257,10 @@ fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
 fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {
     //TODO update based on emotion and excitement
 
-    eeg_view_state.pos_neg.draw(9, window);
-    eeg_view_state.calm_ext.draw(9, window);
+    for i in 0..10 {
+        eeg_view_state.pos_neg.draw(i, window);
+        eeg_view_state.calm_ext.draw(i, window);
+    }
 }
 
 /// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
