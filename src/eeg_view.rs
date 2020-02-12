@@ -498,41 +498,13 @@ impl LabeledBox {
 mod tests {
     use super::*;
 
-    // #[test]
-    // fn test_wrap_eeg_derived_value_index() {
-    //     let i = 4;
-    //     let next_i = 0;
+    #[test]
+    fn test_wrap_eeg_derived_value_index() {
+        let i = 4;
+        let next_i = 0;
 
-    //     assert_eq!(next_i, wrap_eeg_derived_value_index(i));
-    // }
-
-    // #[test]
-    // fn test_percent_to_index() {
-    //     let expected = 9;
-    //     let val = 1.0;
-    //     let max = 10;
-
-    //     assert_eq!(percent_to_index(val, max), expected);
-    // }
-
-    // #[test]
-    // #[should_panic]
-    // fn test_panic_underrange_percent_to_index() {
-    //     let expected = 9;
-    //     let val = -0.1;
-    //     let max = 10;
-
-    //     assert_eq!(percent_to_index(val, max), expected);
-    // }
-
-    // #[test]
-    // fn test_panic_overrange_percent_to_index() {
-    //     let expected = 9;
-    //     let val = 1.1;
-    //     let max = 10;
-
-    //     assert_eq!(percent_to_index(val, max), expected);
-    // }
+        assert_eq!(next_i, wrap_eeg_derived_value_index(i));
+    }
 
     #[test]
     fn test_range_small_number() {
