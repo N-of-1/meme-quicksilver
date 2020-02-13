@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install Dependencies
-      run: sudo apt-get install -y libudev-sys zlib1g-dev alsa libasound2-dev
+      run: sudo apt-get install -y libudev-dev zlib1g-dev alsa libasound2-dev
     - name: Build
       run: cargo build --verbose
     - name: Run tests
