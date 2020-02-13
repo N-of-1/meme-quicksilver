@@ -9,6 +9,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Setup 1
+      run: pkg-config --list-all
+    - name: Setup 2
+      run: pkg-config --libs libudev
+    - name: Setup 3
+      run: pkg-config --modversion libudev
     - name: Install Dependencies
       run: sudo apt-get install -y libudev1 zlib1g-dev alsa libasound2-dev
     - name: Build
