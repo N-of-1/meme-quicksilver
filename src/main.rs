@@ -112,8 +112,6 @@ const BUTTON_V_MARGIN: f32 = 20.0;
 const TITLE_V_MARGIN: f32 = 40.0;
 const TEXT_V_MARGIN: f32 = 200.0;
 
-const OSC_PORT: u16 = 34254; // Incoming Muse OSC UDP packets
-
 const RECT_LEFT_BUTTON: Rectangle = Rectangle {
     pos: Vector {
         x: BUTTON_H_MARGIN,
@@ -152,7 +150,7 @@ struct AppState {
     right_button_color: Color,
     muse_model: MuseModel,
     eeg_view_state: EegViewState,
-    rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
+    _rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
 }
 
 impl AppState {
@@ -210,7 +208,7 @@ impl State for AppState {
             left_button_color: COLOR_CLEAR,
             right_button_color: COLOR_CLEAR,
             eeg_view_state,
-            rx_eeg,
+            _rx_eeg: rx_eeg,
             muse_model,
         })
     }

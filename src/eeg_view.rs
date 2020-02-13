@@ -451,7 +451,6 @@ pub struct LabeledBox {
     size: Vector,
     active_color: Color,
     inactive_color: Color,
-    text_color: Color,
     label_image: Asset<Image>,
 }
 
@@ -473,7 +472,6 @@ impl LabeledBox {
             size,
             active_color,
             inactive_color,
-            text_color,
             label_image,
         }
     }

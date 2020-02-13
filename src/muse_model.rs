@@ -79,7 +79,7 @@ mod inner_receiver {
     use super::{EegMessageReceiver, MuseMessage};
     use nannou_osc;
 
-    const PORT: u16 = 34254;
+    const OSC_PORT: u16 = 34254;
 
     pub struct InnerMessageReceiver {
         receiver: nannou_osc::Receiver,
@@ -89,7 +89,7 @@ mod inner_receiver {
         fn new() -> InnerMessageReceiver {
             info!("Connecting to EEG");
 
-            let receiver = nannou_osc::receiver(PORT)
+            let receiver = nannou_osc::receiver(OSC_PORT)
                 .expect("Can not bind to port- is another copy of this app already running?");
 
             InnerMessageReceiver { receiver }
@@ -206,16 +206,8 @@ where
         acceptable_new_value
     }
 
-    pub fn percent_normalization_complete(&self) -> f32 {
+    pub fn _percent_normalization_complete(&self) -> f32 {
         self.history.len() as f32 / HISTORY_LENGTH as f32
-    }
-
-    pub fn min(&self) -> Option<T> {
-        self.min
-    }
-
-    pub fn max(&self) -> Option<T> {
-        self.max
     }
 
     pub fn mean(&self) -> Option<T> {
@@ -226,11 +218,11 @@ where
         self.deviation
     }
 
-    pub fn percent(&self) -> Option<T> {
+    pub fn _percent(&self) -> Option<T> {
         match self.current {
             Some(v) => {
                 let v100: T = (v - self.min.unwrap()) * 100.into();
-                let range: T = self.max().unwrap() - self.min().unwrap();
+                let range: T = self.max.unwrap() - self.min.unwrap();
                 let r = v100 / range;
 
                 match r.is_finite() {
@@ -601,11 +593,11 @@ mod tests {
         let nv: NormalizedValue<f32> = NormalizedValue::new();
 
         assert_eq!(nv.current, None);
-        assert_eq!(nv.min(), None);
-        assert_eq!(nv.max(), None);
+        assert_eq!(nv.min, None);
+        assert_eq!(nv.max, None);
         assert_eq!(nv.moving_average(), None);
         assert_eq!(nv.deviation, None);
-        assert_eq!(nv.percent(), None);
+        assert_eq!(nv._percent(), None);
         assert_eq!(nv.normalize(nv.moving_average()), None);
         assert_eq!(nv.history.len(), 0);
     }
@@ -616,12 +608,12 @@ mod tests {
         nv.set(1.0);
 
         assert_eq!(nv.current, Some(1.0));
-        assert_eq!(nv.min(), Some(1.0));
-        assert_eq!(nv.max(), Some(1.0));
+        assert_eq!(nv.min, Some(1.0));
+        assert_eq!(nv.max, Some(1.0));
         assert_eq!(nv.moving_average(), Some(1.0));
         assert_eq!(nv.mean(), Some(1.0));
         assert_eq!(nv.deviation(), Some(0.0));
-        assert_eq!(nv.percent(), Some(0.0));
+        assert_eq!(nv._percent(), Some(0.0));
         //        assert_eq!(nv.normalize(nv.get()), Some(std::f64::NAN)); //TODO Is this right? The normalized value blows out with a single value
         assert_eq!(nv.history.len(), 1);
     }
@@ -633,8 +625,8 @@ mod tests {
         nv.set(3.0);
 
         assert_eq!(nv.current, Some(3.0));
-        assert_eq!(nv.min(), Some(1.0));
-        assert_eq!(nv.max(), Some(3.0));
+        assert_eq!(nv.min, Some(1.0));
+        assert_eq!(nv.max, Some(3.0));
         assert_eq!(nv.moving_average(), Some(2.0));
         assert_eq!(nv.mean(), Some(2.0));
         assert_eq!(nv.deviation(), Some(1.0));
@@ -651,16 +643,16 @@ mod tests {
             nv.set(i as f64);
         }
 
-        assert_eq!(nv.min(), Some(0.0));
-        assert_eq!(nv.max(), Some((LENGTH - 1) as f64));
+        assert_eq!(nv.min, Some(0.0));
+        assert_eq!(nv.max, Some((LENGTH - 1) as f64));
         assert_eq!(nv.moving_average(), Some(115.0));
         assert_eq!(nv.mean(), Some(59.5));
         assert_eq!(nv.deviation(), Some(34.63981331743384));
         assert_eq!(nv.normalize(nv.moving_average()), Some(1.602202630002843));
-        assert_eq!(nv.normalize(nv.min()), Some(-1.7176766934264711));
-        assert_eq!(nv.normalize(nv.max()), Some(1.7176766934264711));
+        assert_eq!(nv.normalize(nv.min), Some(-1.7176766934264711));
+        assert_eq!(nv.normalize(nv.max), Some(1.7176766934264711));
         assert_eq!(nv.history.len(), 120);
-        assert_eq!(nv.percent_normalization_complete(), 1.0);
+        assert_eq!(nv._percent_normalization_complete(), 1.0);
     }
 
     #[test]
@@ -672,14 +664,14 @@ mod tests {
             nv.set(i as f32);
         }
 
-        assert_eq!(nv.min(), Some(-100.0));
-        assert_eq!(nv.max(), Some(100.0));
+        assert_eq!(nv.min, Some(-100.0));
+        assert_eq!(nv.max, Some(100.0));
         assert_eq!(nv.moving_average(), Some(96.0));
         assert_eq!(nv.mean(), Some(-40.5));
         assert_eq!(nv.deviation(), Some(34.63981331743384));
         assert_eq!(nv.normalize(nv.moving_average()), Some(4.0560265));
-        assert_eq!(nv.normalize(nv.min()), Some(-1.7176768));
-        assert_eq!(nv.normalize(nv.max()), Some(4.0560265));
+        assert_eq!(nv.normalize(nv.min), Some(-1.7176768));
+        assert_eq!(nv.normalize(nv.max), Some(4.0560265));
         assert_eq!(nv.history.len(), 120);
     }
 }
