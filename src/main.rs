@@ -415,7 +415,7 @@ fn main() {
         icon_path: Some("n-icon.png"),
         fullscreen: true,
         resize: ResizeStrategy::Fit,
-        draw_rate: 35.0,          // 35ms ~= max 30fps
+        draw_rate: 1000. / 60.,   // 60fps
         update_rate: 1000. / 60., // 60 times per second
         ..Settings::default()
     };

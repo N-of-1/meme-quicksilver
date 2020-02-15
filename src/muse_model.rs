@@ -1,5 +1,5 @@
-use crate::muse_packet::*;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use crate::muse_packet::*;
 
 /// Muse data model and associated message handling from muse_packet
 // #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
@@ -614,7 +614,6 @@ mod tests {
         assert_eq!(nv.mean(), Some(1.0));
         assert_eq!(nv.deviation(), Some(0.0));
         assert_eq!(nv._percent(), Some(0.0));
-        //        assert_eq!(nv.normalize(nv.get()), Some(std::f64::NAN)); //TODO Is this right? The normalized value blows out with a single value
         assert_eq!(nv.history.len(), 1);
     }
 
@@ -630,7 +629,6 @@ mod tests {
         assert_eq!(nv.moving_average(), Some(2.0));
         assert_eq!(nv.mean(), Some(2.0));
         assert_eq!(nv.deviation(), Some(1.0));
-        //        assert_eq!(nv.normalize(nv.get()), Some(std::f64::NAN)); //TODO Is this right? The normalized value blows out with a single value
         assert_eq!(nv.history.len(), 2);
     }
 
