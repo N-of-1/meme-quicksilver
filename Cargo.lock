@@ -122,7 +122,7 @@ name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "hermit-abi 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hermit-abi 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -442,7 +442,7 @@ dependencies = [
  "crossbeam-utils 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "memoffset 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "scopeguard 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "scopeguard 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -874,7 +874,7 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1104,7 +1104,7 @@ name = "lock_api"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "scopeguard 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "scopeguard 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1219,7 +1219,7 @@ dependencies = [
 [[package]]
 name = "mandala_quicksilver"
 version = "0.1.0"
-source = "git+https://github.com/N-of-1/mandala_quicksilver.git#9b865d38fac8e6b7137498a6b54f15b2925d5f18"
+source = "git+https://github.com/N-of-1/mandala_quicksilver.git#051577bccf0fe9004bb3d57c47804ab096981854"
 dependencies = [
  "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1297,7 +1297,7 @@ dependencies = [
 
 [[package]]
 name = "minimp3"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "minimp3-sys 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1504,7 +1504,7 @@ name = "num_cpus"
 version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "hermit-abi 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hermit-abi 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1957,7 +1957,7 @@ dependencies = [
  "hound 3.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lewton 0.9.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "minimp3 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "minimp3 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2050,7 +2050,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "scopeguard"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -2933,7 +2933,7 @@ dependencies = [
 "checksum glutin_glx_sys 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "08c243de74d6cf5ea100c788826d2fb9319de315485dd4b310811a663b3809c3"
 "checksum glutin_wgl_sys 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "a93dba7ee3a0feeac0f437141ff25e71ce2066bcf1a706acab1559ffff94eb6a"
 "checksum heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "20564e78d53d2bb135c343b3f47714a56af2061f1c928fdb541dc7b9fdd94205"
-"checksum hermit-abi 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "eff2656d88f158ce120947499e971d743c05dbcbed62e5bd2f38f1698bbc3772"
+"checksum hermit-abi 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "e2c55f143919fbc0bc77e427fe2d74cf23786d7c1875666f2fde3ac3c659bb67"
 "checksum hound 3.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8a164bb2ceaeff4f42542bdb847c41517c78a60f5649671b2a07312b6e117549"
 "checksum html2runes 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "3c63600dd0709cc75da234e89e48f096c249f8197276f0a7ad6437ff49297559"
 "checksum html5ever 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d60508177ec4e5774a112efcf4d4d5f123cb00a43476fa5940b7da568371a165"
@@ -2982,7 +2982,7 @@ dependencies = [
 "checksum meme_machine_database 0.2.0 (git+https://github.com/N-of-1/meme_machine_database.git)" = "<none>"
 "checksum memmap 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6585fd95e7bb50d6cc31e20d4cf9afb4e2ba16c5846fc76793f11218da9c475b"
 "checksum memoffset 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "75189eb85871ea5c2e2c15abbdd541185f63b408415e5051f5cac122d8c774b9"
-"checksum minimp3 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "542e9bed56860c5070a09939eee0e2df6f8f73f60304ddf56d620947e7017239"
+"checksum minimp3 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)" = "9943faa16a9729ff85d28857d9e4a4e8ac4f47f82a738184cd28d32a50c2bc38"
 "checksum minimp3-sys 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "c109ae05c00ad6e3a53fab101e2f234545bdd010f0fffd399355efaf70817817"
 "checksum mio 0.6.21 (registry+https://github.com/rust-lang/crates.io-index)" = "302dec22bcf6bae6dfb69c647187f4b4d0fb6f535521f7bc022430ce8e12008f"
 "checksum mio-extras 2.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "52403fe290012ce777c4626790c8951324a2b9e3316b3143779c72b029742f19"
@@ -3067,7 +3067,7 @@ dependencies = [
 "checksum ryu 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "bfa8506c1de11c9c4e4c38863ccbe02a305c8188e85a05a784c9e11e1c3910c8"
 "checksum same-file 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 "checksum scoped_threadpool 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "1d51f5df5af43ab3f1360b429fa5e0152ac5ce8c0bd6485cae490332e96846a8"
-"checksum scopeguard 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b42e15e59b18a828bbf5c58ea01debb36b9b096346de35d941dcb89009f24a0d"
+"checksum scopeguard 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 "checksum semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
 "checksum semver-parser 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 "checksum serde 0.9.15 (registry+https://github.com/rust-lang/crates.io-index)" = "34b623917345a631dc9608d5194cc206b3fe6c3554cd1c75b937e55e285254af"
