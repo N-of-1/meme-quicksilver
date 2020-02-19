@@ -22,9 +22,9 @@ pub fn parse_muse_packet(addr: SocketAddr, packet: &Packet) -> Vec<MuseMessage> 
         match muse_message_type_option {
             Some(muse_message_type) => {
                 let muse_message = MuseMessage {
-                    time: time,
+                    time,
                     ip_address: addr,
-                    muse_message_type: muse_message_type,
+                    muse_message_type,
                 };
                 muse_messages.push(muse_message);
             }
