@@ -20,7 +20,8 @@ jobs:
       - uses: hecrj/setup-rust-action@v1.2.0
         with:
           rust-version: ${{ matrix.rust }}
-          components: clippy,rustfmt
+          #          components: clippy,rustfmt
+          components: rustfmt
           targets: wasm32-unknown-unknown
       - uses: actions/checkout@master
       - name: Install Dependencies
@@ -30,14 +31,14 @@ jobs:
       - name: Check formatting
         if: matrix.rust == 'stable'
         run: cargo fmt -- --check
-      - name: Clippy desktop
-        run: cargo clippy
+      # - name: Clippy desktop
+      #  run: cargo clippy
       - name: Check stdweb
         if: matrix.os == 'macOS-latest'
         run: cargo install cargo-web && cargo web check --features stdweb
-      - name: Clippy web-sys
-        if: matrix.os == 'macOS-latest'
-        run: cargo clippy --target wasm32-unknown-unknown --features web-sys
+      #- name: Clippy web-sys
+      #  if: matrix.os == 'macOS-latest'
+      #  run: cargo clippy --target wasm32-unknown-unknown --features web-sys
       - name: Build
         run: cargo build --verbose
       - name: Run tests

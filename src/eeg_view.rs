@@ -93,7 +93,7 @@ impl ImageSet {
     fn new(filename_prefix: &str) -> Self {
         let mut i: usize = 0;
         let images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
-                i += 1;
+                i = i + 1;
                 i - 1
             }))); 10];
 
@@ -364,19 +364,19 @@ fn draw_spider_graph(
     ];
     let mut angle = [0.0; 5];
 
-    for val in 0..N_EEG_DERIVED_VALUES {
+    for val in N_EEG_DERIVED_VALUES {
         angle[val] = ((val as f32 * 2. * PI) - (PI / 2.)) / (N_EEG_DERIVED_VALUES) as f32;
     }
 
     // Calculate graph endpoints
-    for val in 0..N_EEG_DERIVED_VALUES {
+    for val in N_EEG_DERIVED_VALUES {
         let radius = spider_values[val]; //TODO Bound the values better
         let (x, y) = end_of_spider_graph(chan, radius, angle[val]);
         position[val] = Vector { x, y };
     }
 
     // Label the graph
-    &graph_label_images[chan].execute(|image| {
+    graph_label_images[chan].execute(|image| {
         window.draw(
             &image
                 .area()
@@ -387,7 +387,7 @@ fn draw_spider_graph(
     });
 
     // Draw axis lines for each spider graph
-    for val in 0..N_EEG_DERIVED_VALUES {
+    for val in N_EEG_DERIVED_VALUES {
         // Draw from center to outside edge of spider graph
         let center = end_of_spider_graph(chan, 0.0, angle[val]);
         let tip = end_of_spider_graph(chan, SPIDER_GRAPH_AXIS_LENGTH, angle[val]);
@@ -412,7 +412,7 @@ fn draw_spider_graph(
     }
 
     // Label the endpoints
-    for val in 0..N_EEG_DERIVED_VALUES {
+    for val in N_EEG_DERIVED_VALUES {
         // Draw the dot at each point on the spider graph
         window.draw(
             &Circle::new(position[val], SPIDER_POINT_RADIUS),
@@ -420,7 +420,7 @@ fn draw_spider_graph(
         );
 
         // Draw the label over the dot
-        &frequency_label_images[val].execute(|image| {
+        frequency_label_images[val].execute(|image| {
             window.draw(
                 &image
                     .area()
