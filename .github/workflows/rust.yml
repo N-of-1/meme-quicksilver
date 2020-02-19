@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@master
       - name: Install Dependencies
         if: matrix.os == 'ubuntu-latest'
-        run: sudo apt update && sudo apt install libudev-dev
+        run: sudo apt update && sudo apt install libudev-dev alsa
       #      run: sudo apt-get install -y libudev1 zlib1g-dev alsa libasound2-dev
       - name: Check formatting
         if: matrix.rust == 'stable'
