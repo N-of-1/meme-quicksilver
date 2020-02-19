@@ -45,9 +45,9 @@ const SCREEN_SIZE: (f32, f32) = (1920.0, 1200.0);
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 const SCREEN_SIZE: (f32, f32) = (1280.0, 650.0);
 
-const FPS: u64 = 60;
-const UPS: u64 = 60;
-const FRAME_TITLE: u64 = 1 * FPS; // 30 frames/sec
+const FPS: u64 = 60; // Frames per second
+const UPS: u64 = 60; // Updates per second
+const FRAME_TITLE: u64 = 1 * FPS;
 const FRAME_INTRO: u64 = FRAME_TITLE + 1 * FPS;
 const FRAME_SETTLE: u64 = FRAME_INTRO + 12000 * FPS;
 const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
@@ -416,8 +416,8 @@ fn main() {
         icon_path: Some("n-icon.png"),
         fullscreen: true,
         resize: ResizeStrategy::Fit,
-        draw_rate: 1000. / 60.,   // 60fps
-        update_rate: 1000. / 60., // 60 times per second
+        draw_rate: 1000. / FPS as f64,
+        update_rate: 1000. / UPS as f64,
         ..Settings::default()
     };
 
