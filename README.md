@@ -2,7 +2,7 @@
   <img src="images/nof1-logo.png">
 </p>
 
-# meme_quicksilver
+# meme-quicksilver
 
 master
 [![Master branch build status](https://github.com/N-of-1/meme-quicksilver/workflows/Rust/badge.svg?branch=master)](https://github.com/N-of-1/meme-quicksilver/actions) &emsp; dev
