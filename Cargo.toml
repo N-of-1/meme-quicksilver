@@ -11,7 +11,7 @@ log = "0.4"
 num-traits = "0.2"
 arr_macro = "0.1"
 svg = "0.6"
-mandala_quicksilver = {git = "https://github.com/N-of-1/mandala-quicksilver.git", release="v0.3"}
+mandala_quicksilver = {git = "https://github.com/N-of-1/mandala-quicksilver.git", release="v0.4"}
 
 # Uncomment this block unless targeting ARM
 quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image_fix_and_add"}
