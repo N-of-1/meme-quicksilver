@@ -26,14 +26,16 @@ use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
     combinators::result,
     geom::{Line, Rectangle, Shape, Vector},
-    graphics::{Background::Col, Background::Img, Color, Font, FontStyle, Image},
+    graphics::{
+        Background::Col, Background::Img, Color, Font, FontStyle, Image, Mesh, ShapeRenderer,
+    },
     input::{ButtonState, GamepadButton, Key, MouseButton},
     lifecycle::{run, Asset, Event, Settings, State, Window},
     sound::Sound,
     Future, Result,
 };
 use std::sync::mpsc::Receiver;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 mod eeg_view;
 mod muse_model;
@@ -46,15 +48,18 @@ const SCREEN_SIZE: (f32, f32) = (1920.0, 1200.0);
 // const SCREEN_SIZE: (f32, f32) = (1280.0, 768.0);
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 const SCREEN_SIZE: (f32, f32) = (1280.0, 650.0);
+const MANDALA_CENTER: (f32, f32) = (SCREEN_SIZE.0, SCREEN_SIZE.1);
+const MANDALA_SCALE: (f32, f32) = (1.0, 1.0); // Adjust size of Mandala vs screen
 
 const FPS: u64 = 60; // Frames per second
 const UPS: u64 = 60; // Updates per second
-const FRAME_TITLE: u64 = 1 * FPS;
+const FRAME_TITLE: u64 = 5 * FPS;
 const FRAME_INTRO: u64 = FRAME_TITLE + 1 * FPS;
 const FRAME_SETTLE: u64 = FRAME_INTRO + 12000 * FPS;
 const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
 
 const IMAGE_LOGO: &str = "N_of_1_logo_blue_transparent.png";
+const MANDALA_VALENCE_PETAL_SVG_NAME: &str = "mandala_valence_petal.svg";
 
 const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
 const FONT_MULI: &str = "Muli.ttf";
@@ -166,6 +171,7 @@ struct AppState {
     left_button_color: Color,
     right_button_color: Color,
     mandala_valence: Mandala,
+    start_time: Instant,
     muse_model: MuseModel,
     eeg_view_state: EegViewState,
     _rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
@@ -194,6 +200,12 @@ impl AppState {
     }
 }
 
+impl AppState {
+    fn seconds_since_start(&self) -> f32 {
+        self.start_time.elapsed().as_nanos() as f32 / 1000000000.0
+    }
+}
+
 impl State for AppState {
     fn new() -> Result<AppState> {
         let title_font = Font::load(FONT_EXTRA_BOLD);
@@ -214,18 +226,17 @@ impl State for AppState {
         let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
         let (rx_eeg, muse_model) = muse_model::MuseModel::new();
 
-        let mandala_center = (SCREEN_SIZE.0, SCREEN_SIZE.1);
-        let mandala_scale = (1.0, 1.0);
         let mandala_valence = Mandala::new(
-            "mandala_valence_petal.svg",
-            mandala_center,
-            mandala_scale,
+            MANDALA_VALENCE_PETAL_SVG_NAME,
+            MANDALA_CENTER,
+            MANDALA_SCALE,
             20,
             COLOR_VALENCE_MANDALA_CLOSED,
             COLOR_VALENCE_MANDALA_OPEN,
         );
 
         let eeg_view_state = EegViewState::new();
+        let start_time = Instant::now();
 
         Ok(AppState {
             frame_count: 0,
@@ -239,6 +250,7 @@ impl State for AppState {
             right_button_color: COLOR_CLEAR,
             eeg_view_state,
             _rx_eeg: rx_eeg,
+            start_time,
             muse_model,
         })
     }
@@ -341,6 +353,13 @@ impl State for AppState {
         window.clear(COLOR_BACKGROUND)?;
 
         if self.frame_count < FRAME_TITLE {
+            let mut mesh = Mesh::new();
+
+            let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED);
+            self.mandala_valence
+                .draw(self.seconds_since_start(), &mut shape_renderer);
+            window.mesh().extend(&mesh);
+
             // LOGO
             self.logo.execute(|image| {
                 window.draw(
