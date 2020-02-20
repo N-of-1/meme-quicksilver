@@ -1,5 +1,5 @@
 [package]
-name = "meme_quicksilver"
+name = "meme-quicksilver"
 version = "0.4.0"
 authors = ["Paul Houghton <paulirotta@gmail.com>"]
 edition = "2018"
