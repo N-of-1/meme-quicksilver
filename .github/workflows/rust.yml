@@ -23,7 +23,6 @@ jobs:
           components: rustfmt
           targets: wasm32-unknown-unknown
       - uses: actions/checkout@master
-      - uses: trmcnvn/chrome-addon@v2
       - name: Install Dependencies
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt update && sudo apt install libudev-dev zlib1g-dev alsa libasound2-dev
@@ -36,4 +35,4 @@ jobs:
         run: cargo test --verbose
       - name: Run tests in WASM
         if: matrix.os == 'macos-latest' || matrix.os == 'windows.latest'
-        run: cargo install cargo-web && cargo web test
+        run: cargo install cargo-web && cargo web test --nodejs
