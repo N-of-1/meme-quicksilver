@@ -12,6 +12,7 @@ extern crate web_logger;
 extern crate nannou_osc;
 
 extern crate arr_macro;
+extern crate mandala_quicksilver;
 extern crate num_traits;
 extern crate quicksilver;
 
@@ -45,8 +46,9 @@ const SCREEN_SIZE: (f32, f32) = (1920.0, 1200.0);
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 const SCREEN_SIZE: (f32, f32) = (1280.0, 650.0);
 
-const FPS: u64 = 30;
-const FRAME_TITLE: u64 = 1 * FPS; // 30 frames/sec
+const FPS: u64 = 60; // Frames per second
+const UPS: u64 = 60; // Updates per second
+const FRAME_TITLE: u64 = 1 * FPS;
 const FRAME_INTRO: u64 = FRAME_TITLE + 1 * FPS;
 const FRAME_SETTLE: u64 = FRAME_INTRO + 12000 * FPS;
 const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
@@ -112,8 +114,6 @@ const BUTTON_V_MARGIN: f32 = 20.0;
 const TITLE_V_MARGIN: f32 = 40.0;
 const TEXT_V_MARGIN: f32 = 200.0;
 
-const OSC_PORT: u16 = 34254; // Incoming Muse OSC UDP packets
-
 const RECT_LEFT_BUTTON: Rectangle = Rectangle {
     pos: Vector {
         x: BUTTON_H_MARGIN,
@@ -152,7 +152,7 @@ struct AppState {
     right_button_color: Color,
     muse_model: MuseModel,
     eeg_view_state: EegViewState,
-    rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
+    _rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
 }
 
 impl AppState {
@@ -210,7 +210,7 @@ impl State for AppState {
             left_button_color: COLOR_CLEAR,
             right_button_color: COLOR_CLEAR,
             eeg_view_state,
-            rx_eeg,
+            _rx_eeg: rx_eeg,
             muse_model,
         })
     }
@@ -412,13 +412,15 @@ fn main() {
     }
 
     info!("meme_quicksilver start");
+    let draw_rate: f64 = 1000. / FPS as f64;
+    let update_rate: f64 = 1000. / UPS as f64;
 
     let settings = Settings {
         icon_path: Some("n-icon.png"),
         fullscreen: true,
         resize: ResizeStrategy::Fit,
-        draw_rate: 35.0,          // 35ms ~= max 30fps
-        update_rate: 1000. / 60., // 60 times per second
+        draw_rate,
+        update_rate,
         ..Settings::default()
     };
 

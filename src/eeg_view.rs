@@ -93,7 +93,7 @@ impl ImageSet {
     fn new(filename_prefix: &str) -> Self {
         let mut i: usize = 0;
         let images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
-                i += 1;
+                i = i + 1;
                 i - 1
             }))); 10];
 
@@ -376,7 +376,7 @@ fn draw_spider_graph(
     }
 
     // Label the graph
-    &graph_label_images[chan].execute(|image| {
+    let _result = graph_label_images[chan].execute(|image| {
         window.draw(
             &image
                 .area()
@@ -420,7 +420,7 @@ fn draw_spider_graph(
         );
 
         // Draw the label over the dot
-        &frequency_label_images[val].execute(|image| {
+        let _result = frequency_label_images[val].execute(|image| {
             window.draw(
                 &image
                     .area()
@@ -451,7 +451,6 @@ pub struct LabeledBox {
     size: Vector,
     active_color: Color,
     inactive_color: Color,
-    text_color: Color,
     label_image: Asset<Image>,
 }
 
@@ -473,7 +472,6 @@ impl LabeledBox {
             size,
             active_color,
             inactive_color,
-            text_color,
             label_image,
         }
     }
@@ -498,41 +496,13 @@ impl LabeledBox {
 mod tests {
     use super::*;
 
-    // #[test]
-    // fn test_wrap_eeg_derived_value_index() {
-    //     let i = 4;
-    //     let next_i = 0;
+    #[test]
+    fn test_wrap_eeg_derived_value_index() {
+        let i = 4;
+        let next_i = 0;
 
-    //     assert_eq!(next_i, wrap_eeg_derived_value_index(i));
-    // }
-
-    // #[test]
-    // fn test_percent_to_index() {
-    //     let expected = 9;
-    //     let val = 1.0;
-    //     let max = 10;
-
-    //     assert_eq!(percent_to_index(val, max), expected);
-    // }
-
-    // #[test]
-    // #[should_panic]
-    // fn test_panic_underrange_percent_to_index() {
-    //     let expected = 9;
-    //     let val = -0.1;
-    //     let max = 10;
-
-    //     assert_eq!(percent_to_index(val, max), expected);
-    // }
-
-    // #[test]
-    // fn test_panic_overrange_percent_to_index() {
-    //     let expected = 9;
-    //     let val = 1.1;
-    //     let max = 10;
-
-    //     assert_eq!(percent_to_index(val, max), expected);
-    // }
+        assert_eq!(next_i, wrap_eeg_derived_value_index(i));
+    }
 
     #[test]
     fn test_range_small_number() {
