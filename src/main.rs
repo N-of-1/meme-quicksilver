@@ -12,6 +12,7 @@ extern crate web_logger;
 extern crate nannou_osc;
 
 extern crate arr_macro;
+extern crate mandala_quicksilver;
 extern crate num_traits;
 extern crate quicksilver;
 
