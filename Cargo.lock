@@ -1219,7 +1219,7 @@ dependencies = [
 [[package]]
 name = "mandala_quicksilver"
 version = "0.1.0"
-source = "git+https://github.com/N-of-1/mandala_quicksilver.git#051577bccf0fe9004bb3d57c47804ab096981854"
+source = "git+https://github.com/N-of-1/mandala_quicksilver.git#f72c7bffc287a15a040309c76c01ee5ebb77b47e"
 dependencies = [
  "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1695,7 +1695,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "quicksilver"
 version = "0.3.22"
-source = "git+https://github.com/paulirotta/quicksilver.git?branch=image_fix_and_add#545317c979c6de28a8863b9b70b7ba9c80588163"
+source = "git+https://github.com/paulirotta/quicksilver.git?branch=image_fix_and_add#b239c93d0d38aa25663d1a5a421fbef5c785ae14"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "dirs 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",

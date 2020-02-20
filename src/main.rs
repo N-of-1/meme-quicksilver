@@ -411,13 +411,15 @@ fn main() {
     }
 
     info!("meme_quicksilver start");
+    let draw_rate: f64 = 1000. / FPS as f64;
+    let update_rate: f64 = 1000. / UPS as f64;
 
     let settings = Settings {
         icon_path: Some("n-icon.png"),
         fullscreen: true,
         resize: ResizeStrategy::Fit,
-        draw_rate: 1000. / FPS as f64,
-        update_rate: 1000. / UPS as f64,
+        draw_rate,
+        update_rate,
         ..Settings::default()
     };
 
