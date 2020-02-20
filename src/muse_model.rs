@@ -665,11 +665,11 @@ mod tests {
         assert_eq!(nv.min, Some(-100.0));
         assert_eq!(nv.max, Some(100.0));
         assert_eq!(nv.moving_average(), Some(96.0));
-        assert_eq!(nv.mean(), Some(-40.5));
+        assert_eq!(nv.mean(), Some(40.5));
         assert_eq!(nv.deviation(), Some(34.63981331743384));
-        assert_eq!(nv.normalize(nv.moving_average()), Some(4.0560265));
-        assert_eq!(nv.normalize(nv.min), Some(-1.7176768));
-        assert_eq!(nv.normalize(nv.max), Some(4.0560265));
+        assert_eq!(nv.normalize(nv.moving_average()), Some(1.6022027));
+        assert_eq!(nv.normalize(nv.min), Some(-4.0560265));
+        assert_eq!(nv.normalize(nv.max), Some(1.7176768));
         assert_eq!(nv.history.len(), 120);
     }
 }
