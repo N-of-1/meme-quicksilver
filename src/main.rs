@@ -21,6 +21,7 @@ extern crate log;
 
 use arr_macro::arr;
 use eeg_view::EegViewState;
+use mandala_quicksilver::Mandala;
 use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
     combinators::result,
@@ -105,6 +106,20 @@ const COLOR_TEXT: Color = Color::BLACK;
 const COLOR_BUTTON: Color = COLOR_NOF1_DARK_BLUE;
 const COLOR_BUTTON_PRESSED: Color = COLOR_NOF1_LIGHT_BLUE;
 const COLOR_EMOTION: Color = Color::YELLOW;
+const COLOR_VALENCE_MANDALA_CLOSED: Color = Color {
+    // Turqoise, translucent, Positive smoother more open
+    r: 64.0 / 256.0,
+    g: 224.0 / 256.0,
+    b: 208.0 / 256.0,
+    a: 0.2,
+};
+const COLOR_VALENCE_MANDALA_OPEN: Color = Color {
+    // Crimson, Negative spiky emotion
+    r: 220.0 / 256.0,
+    g: 20.0 / 256.0,
+    b: 60.0 / 256.0,
+    a: 1.0,
+};
 
 const BUTTON_WIDTH: f32 = 200.0;
 const BUTTON_HEIGHT: f32 = 50.0;
@@ -150,6 +165,7 @@ struct AppState {
     sound_blah: Asset<Sound>,
     left_button_color: Color,
     right_button_color: Color,
+    mandala_valence: Mandala,
     muse_model: MuseModel,
     eeg_view_state: EegViewState,
     _rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
@@ -198,6 +214,17 @@ impl State for AppState {
         let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
         let (rx_eeg, muse_model) = muse_model::MuseModel::new();
 
+        let mandala_center = (SCREEN_SIZE.0, SCREEN_SIZE.1);
+        let mandala_scale = (1.0, 1.0);
+        let mandala_valence = Mandala::new(
+            "mandala_valence_petal.svg",
+            mandala_center,
+            mandala_scale,
+            20,
+            COLOR_VALENCE_MANDALA_CLOSED,
+            COLOR_VALENCE_MANDALA_OPEN,
+        );
+
         let eeg_view_state = EegViewState::new();
 
         Ok(AppState {
@@ -207,6 +234,7 @@ impl State for AppState {
             logo,
             sound_click,
             sound_blah,
+            mandala_valence,
             left_button_color: COLOR_CLEAR,
             right_button_color: COLOR_CLEAR,
             eeg_view_state,
