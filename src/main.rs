@@ -48,8 +48,8 @@ const SCREEN_SIZE: (f32, f32) = (1920.0, 1200.0);
 // const SCREEN_SIZE: (f32, f32) = (1280.0, 768.0);
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 const SCREEN_SIZE: (f32, f32) = (1280.0, 650.0);
-const MANDALA_CENTER: (f32, f32) = (SCREEN_SIZE.0, SCREEN_SIZE.1);
-const MANDALA_SCALE: (f32, f32) = (1.0, 1.0); // Adjust size of Mandala vs screen
+const MANDALA_CENTER: (f32, f32) = (SCREEN_SIZE.0 / 2.0, SCREEN_SIZE.1 / 2.0);
+const MANDALA_SCALE: (f32, f32) = (3.0, 3.0); // Adjust size of Mandala vs screen
 
 const FPS: u64 = 60; // Frames per second
 const UPS: u64 = 60; // Updates per second
@@ -58,7 +58,7 @@ const FRAME_INTRO: u64 = FRAME_TITLE + 1 * FPS;
 const FRAME_SETTLE: u64 = FRAME_INTRO + 12000 * FPS;
 const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
 
-const IMAGE_LOGO: &str = "N_of_1_logo_blue_transparent.png";
+const IMAGE_LOGO: &str = "Nof1-logo.png";
 const MANDALA_VALENCE_PETAL_SVG_NAME: &str = "mandala_valence_petal.svg";
 
 const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
@@ -237,7 +237,6 @@ impl State for AppState {
             Transform::translate((0.0, 0.0)),
             Transform::scale((0.1, 1.0)),
         );
-
         let mandala_valence = Mandala::new(
             MANDALA_VALENCE_PETAL_SVG_NAME,
             MANDALA_CENTER,
