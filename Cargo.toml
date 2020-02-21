@@ -11,7 +11,7 @@ log = "0.4"
 num-traits = "0.2"
 arr_macro = "0.1"
 svg = "0.6"
-mandala_quicksilver = {git = "https://github.com/N-of-1/mandala-quicksilver.git", release="v0.4"}
+mandala-quicksilver = {git = "https://github.com/N-of-1/mandala-quicksilver.git", release="v0.4"}
 
 # Uncomment this block unless targeting ARM
 quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image_fix_and_add"}
@@ -24,7 +24,7 @@ opt-level = 3
 # lto = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-meme_machine_database = {git = "https://github.com/N-of-1/meme-machine-database.git", version = "0.2.0"}
+meme-machine-database = {git = "https://github.com/N-of-1/meme-machine-database.git", version = "0.2.0"}
 nannou_osc = "0.1"
 env_logger = "0.7"
 ws = "0.9"

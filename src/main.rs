@@ -21,11 +21,11 @@ extern crate log;
 
 use arr_macro::arr;
 use eeg_view::EegViewState;
-use mandala_quicksilver::Mandala;
+use mandala_quicksilver::{Mandala, MandalaState};
 use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
     combinators::result,
-    geom::{Line, Rectangle, Shape, Vector},
+    geom::{Line, Rectangle, Shape, Transform, Vector},
     graphics::{
         Background::Col, Background::Img, Color, Font, FontStyle, Image, Mesh, ShapeRenderer,
     },
@@ -225,14 +225,26 @@ impl State for AppState {
         let sound_click = Asset::new(Sound::load(SOUND_CLICK));
         let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
         let (rx_eeg, muse_model) = muse_model::MuseModel::new();
+        let mandala_state_open = MandalaState::new(
+            COLOR_VALENCE_MANDALA_OPEN,
+            Transform::rotate(90),
+            Transform::translate((50.0, 0.0)),
+            Transform::scale((1.0, 1.0)),
+        );
+        let mandala_state_closed = MandalaState::new(
+            COLOR_VALENCE_MANDALA_CLOSED,
+            Transform::rotate(0.0),
+            Transform::translate((0.0, 0.0)),
+            Transform::scale((0.1, 1.0)),
+        );
 
         let mandala_valence = Mandala::new(
             MANDALA_VALENCE_PETAL_SVG_NAME,
             MANDALA_CENTER,
             MANDALA_SCALE,
             20,
-            COLOR_VALENCE_MANDALA_CLOSED,
-            COLOR_VALENCE_MANDALA_OPEN,
+            mandala_state_open,
+            mandala_state_closed,
         );
 
         let eeg_view_state = EegViewState::new();

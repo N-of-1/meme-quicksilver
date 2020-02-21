@@ -1204,9 +1204,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.66"
+version = "0.2.67"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d515b1f41455adea1313a4a2ac8a8a477634fbae63cc6100e3aebb207ce61558"
+checksum = "eb147597cdf94ed43ab7a9038716637d2d1bf2bc571da995d0028dec06bd3018"
 
 [[package]]
 name = "libloading"
@@ -1348,9 +1348,9 @@ checksum = "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4"
 
 [[package]]
 name = "mach"
-version = "0.2.3"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86dd2487cdfea56def77b88438a2c915fb45113c5319bfe7e14306ca4cd0b0e1"
+checksum = "b823e83b2affd8f40a9ee8c29dbc56404c1e34cd2710921f2801e2cf29527afa"
 dependencies = [
  "libc",
 ]
@@ -1365,9 +1365,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "mandala_quicksilver"
+name = "mandala-quicksilver"
 version = "0.1.0"
-source = "git+https://github.com/N-of-1/mandala-quicksilver.git#711aa47db66bc74ef72d867609fa101acc2b908b"
+source = "git+https://github.com/N-of-1/mandala-quicksilver.git#f0eef0ca271ec86ee3cbdc8377c6e0418753dad3"
 dependencies = [
  "env_logger",
  "log",
@@ -1404,23 +1404,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "53445de381a1f436797497c61d851644d0e8e88e6140f22872ad33a704933978"
 
 [[package]]
-name = "meme_machine_database"
+name = "meme-machine-database"
 version = "0.2.0"
-source = "git+https://github.com/N-of-1/meme-machine-database.git#1fb6fdbee44e924f12a41c769246bb712438c014"
+source = "git+https://github.com/N-of-1/meme-machine-database.git#3b20d2151463c6666c46c35268913a7db35b509d"
 dependencies = [
  "diesel",
  "dotenv",
 ]
 
 [[package]]
-name = "meme_quicksilver"
+name = "meme-quicksilver"
 version = "0.4.0"
 dependencies = [
  "arr_macro",
  "env_logger",
  "log",
- "mandala_quicksilver",
- "meme_machine_database",
+ "mandala-quicksilver",
+ "meme-machine-database",
  "nannou_osc",
  "num-traits 0.2.11",
  "quicksilver",
@@ -1451,9 +1451,9 @@ dependencies = [
 
 [[package]]
 name = "minimp3"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9943faa16a9729ff85d28857d9e4a4e8ac4f47f82a738184cd28d32a50c2bc38"
+checksum = "dce0cff6a0bfd3f8b6b2350819bbddd63bc65cc45e53888bdd0ff49dde16d2d5"
 dependencies = [
  "minimp3-sys",
  "slice-deque",
@@ -1461,9 +1461,9 @@ dependencies = [
 
 [[package]]
 name = "minimp3-sys"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c109ae05c00ad6e3a53fab101e2f234545bdd010f0fffd399355efaf70817817"
+checksum = "e21c73734c69dc95696c9ed8926a2b393171d98b3f5f5935686a26a487ab9b90"
 dependencies = [
  "cc",
 ]
@@ -2413,9 +2413,9 @@ checksum = "c111b5bd5695e56cffe5129854aa230b39c93a305372fdbb2668ca2394eea9f8"
 
 [[package]]
 name = "slice-deque"
-version = "0.2.4"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffddf594f5f597f63533d897427a570dbaa9feabaaa06595b74b71b7014507d7"
+checksum = "31ef6ee280cdefba6d2d0b4b78a84a1c1a3f3a4cec98c2d4231c8bc225de0f25"
 dependencies = [
  "libc",
  "mach",
