@@ -237,14 +237,16 @@ impl State for AppState {
             Transform::translate((0.0, 0.0)),
             Transform::scale((0.1, 1.0)),
         );
-        let mandala_valence = Mandala::new(
+        let mut mandala_valence = Mandala::new(
             MANDALA_VALENCE_PETAL_SVG_NAME,
             MANDALA_CENTER,
             MANDALA_SCALE,
             20,
             mandala_state_open,
             mandala_state_closed,
+            1.0,
         );
+        mandala_valence.start_transition(0.0, 3.0, 0.0);
 
         let eeg_view_state = EegViewState::new();
         let start_time = Instant::now();

@@ -99,7 +99,7 @@ checksum = "0609c78bd572f4edc74310dfb63a01f5609d53fa8b4dd7c4d98aef3b3e8d72d1"
 dependencies = [
  "proc-macro-hack",
  "quote 1.0.2",
- "syn 1.0.14",
+ "syn 1.0.15",
 ]
 
 [[package]]
@@ -560,7 +560,7 @@ checksum = "45f5098f628d02a7a0f68ddba586fb61e80edec3bdc1be3b921f4ceec60858d3"
 dependencies = [
  "proc-macro2 1.0.8",
  "quote 1.0.2",
- "syn 1.0.14",
+ "syn 1.0.15",
 ]
 
 [[package]]
@@ -758,7 +758,7 @@ checksum = "0bc225b78e0391e4b8683440bf2e63c2deeeb2ce5189eab46e2b68c6d3725d08"
 dependencies = [
  "proc-macro2 1.0.8",
  "quote 1.0.2",
- "syn 1.0.14",
+ "syn 1.0.15",
  "synstructure",
 ]
 
@@ -1367,7 +1367,7 @@ dependencies = [
 [[package]]
 name = "mandala-quicksilver"
 version = "0.1.0"
-source = "git+https://github.com/N-of-1/mandala-quicksilver.git#f0eef0ca271ec86ee3cbdc8377c6e0418753dad3"
+source = "git+https://github.com/N-of-1/mandala-quicksilver.git?branch=mandala_transitions#e958fb3c2ab2ff60fe6e82ddce5075e67f48889d"
 dependencies = [
  "env_logger",
  "log",
@@ -1399,9 +1399,9 @@ checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
 
 [[package]]
 name = "memchr"
-version = "2.3.2"
+version = "2.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53445de381a1f436797497c61d851644d0e8e88e6140f22872ad33a704933978"
+checksum = "3728d817d99e5ac407411fa471ff9800a778d88a24685968b36824eaf4bee400"
 
 [[package]]
 name = "meme-machine-database"
@@ -1864,7 +1864,7 @@ checksum = "ecd45702f76d6d3c75a80564378ae228a85f0b59d2f3ed43c91b4a69eb2ebfc5"
 dependencies = [
  "proc-macro2 1.0.8",
  "quote 1.0.2",
- "syn 1.0.14",
+ "syn 1.0.15",
 ]
 
 [[package]]
@@ -2330,7 +2330,7 @@ checksum = "128f9e303a5a29922045a830221b8f78ec74a5f544944f3d5984f8ec3895ef64"
 dependencies = [
  "proc-macro2 1.0.8",
  "quote 1.0.2",
- "syn 1.0.14",
+ "syn 1.0.15",
 ]
 
 [[package]]
@@ -2501,7 +2501,7 @@ dependencies = [
  "quote 1.0.2",
  "serde 1.0.104",
  "serde_derive",
- "syn 1.0.14",
+ "syn 1.0.15",
 ]
 
 [[package]]
@@ -2517,7 +2517,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "sha1",
- "syn 1.0.14",
+ "syn 1.0.15",
 ]
 
 [[package]]
@@ -2638,9 +2638,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.14"
+version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af6f3550d8dff9ef7dc34d384ac6f107e5d31c8f57d9f28e0081503f547ac8f5"
+checksum = "7a0294dc449adc58bb6592fff1a23d3e5e6e235afc6a0ffca2657d19e7bbffe5"
 dependencies = [
  "proc-macro2 1.0.8",
  "quote 1.0.2",
@@ -2664,7 +2664,7 @@ checksum = "67656ea1dc1b41b1451851562ea232ec2e5a80242139f7e679ceccfb5d61f545"
 dependencies = [
  "proc-macro2 1.0.8",
  "quote 1.0.2",
- "syn 1.0.14",
+ "syn 1.0.15",
  "unicode-xid 0.2.0",
 ]
 
@@ -2883,7 +2883,7 @@ dependencies = [
  "log",
  "proc-macro2 1.0.8",
  "quote 1.0.2",
- "syn 1.0.14",
+ "syn 1.0.15",
  "wasm-bindgen-shared",
 ]
 
@@ -2905,7 +2905,7 @@ checksum = "e85031354f25eaebe78bb7db1c3d86140312a911a106b2e29f9cc440ce3e7668"
 dependencies = [
  "proc-macro2 1.0.8",
  "quote 1.0.2",
- "syn 1.0.14",
+ "syn 1.0.15",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
