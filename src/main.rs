@@ -53,7 +53,7 @@ const MANDALA_SCALE: (f32, f32) = (3.0, 3.0); // Adjust size of Mandala vs scree
 
 const FPS: u64 = 60; // Frames per second
 const UPS: u64 = 60; // Updates per second
-const FRAME_TITLE: u64 = 5 * FPS;
+const FRAME_TITLE: u64 = 4 * FPS;
 const FRAME_INTRO: u64 = FRAME_TITLE + 1 * FPS;
 const FRAME_SETTLE: u64 = FRAME_INTRO + 12000 * FPS;
 const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
@@ -363,7 +363,11 @@ impl State for AppState {
 
     // This is called 30 times per second
     fn draw(&mut self, window: &mut Window) -> Result<()> {
-        window.clear(COLOR_BACKGROUND)?;
+        let background_color = match self.frame_count < FRAME_TITLE {
+            true => Color::BLACK,
+            false => COLOR_BACKGROUND,
+        };
+        window.clear(background_color)?;
 
         if self.frame_count < FRAME_TITLE {
             let mut mesh = Mesh::new();
