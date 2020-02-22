@@ -45,9 +45,9 @@ mod muse_packet;
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 const SCREEN_SIZE: (f32, f32) = (1920.0, 1200.0);
-// const SCREEN_SIZE: (f32, f32) = (1280.0, 768.0);
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 const SCREEN_SIZE: (f32, f32) = (1280.0, 650.0);
+
 const MANDALA_CENTER: (f32, f32) = (SCREEN_SIZE.0 / 2.0, SCREEN_SIZE.1 / 2.0);
 const MANDALA_SCALE: (f32, f32) = (3.0, 3.0); // Adjust size of Mandala vs screen
 
@@ -60,6 +60,7 @@ const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
 
 const IMAGE_LOGO: &str = "Nof1-logo.png";
 const MANDALA_VALENCE_PETAL_SVG_NAME: &str = "mandala_valence_petal.svg";
+const MANDALA_AROUSAL_PETAL_SVG_NAME: &str = "mandala_arousal_petal.svg";
 
 const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
 const FONT_MULI: &str = "Muli.ttf";
@@ -125,6 +126,20 @@ const COLOR_VALENCE_MANDALA_OPEN: Color = Color {
     b: 60.0 / 256.0,
     a: 1.0,
 };
+const COLOR_AROUSAL_MANDALA_CLOSED: Color = Color {
+    // Dark purple, translucent, low arousal
+    r: 75.0 / 256.0,
+    g: 48.0 / 255.0,
+    b: 165.0 / 255.0,
+    a: 0.4,
+};
+const COLOR_AROUSAL_MANDALA_OPEN: Color = Color {
+    // Red, opague, high arousal
+    r: 255.0 / 255.0,
+    g: 30.0 / 255.0,
+    b: 65.0 / 256.0,
+    a: 1.0,
+};
 
 const BUTTON_WIDTH: f32 = 200.0;
 const BUTTON_HEIGHT: f32 = 50.0;
@@ -171,6 +186,7 @@ struct AppState {
     left_button_color: Color,
     right_button_color: Color,
     mandala_valence: Mandala,
+    mandala_arousal: Mandala,
     start_time: Instant,
     muse_model: MuseModel,
     eeg_view_state: EegViewState,
@@ -225,13 +241,13 @@ impl State for AppState {
         let sound_click = Asset::new(Sound::load(SOUND_CLICK));
         let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
         let (rx_eeg, muse_model) = muse_model::MuseModel::new();
-        let mandala_state_open = MandalaState::new(
+        let mandala_valence_state_open = MandalaState::new(
             COLOR_VALENCE_MANDALA_OPEN,
             Transform::rotate(90),
             Transform::translate((50.0, 0.0)),
             Transform::scale((1.0, 1.0)),
         );
-        let mandala_state_closed = MandalaState::new(
+        let mandala_valence_state_closed = MandalaState::new(
             COLOR_VALENCE_MANDALA_CLOSED,
             Transform::rotate(0.0),
             Transform::translate((0.0, 0.0)),
@@ -241,12 +257,34 @@ impl State for AppState {
             MANDALA_VALENCE_PETAL_SVG_NAME,
             MANDALA_CENTER,
             MANDALA_SCALE,
-            20,
-            mandala_state_open,
-            mandala_state_closed,
+            12,
+            mandala_valence_state_open,
+            mandala_valence_state_closed,
             1.0,
         );
+        let mandala_arousal_state_open = MandalaState::new(
+            COLOR_AROUSAL_MANDALA_OPEN,
+            Transform::rotate(90),
+            Transform::translate((50.0, 0.0)),
+            Transform::scale((0.8, 0.8)),
+        );
+        let mandala_arousal_state_closed = MandalaState::new(
+            COLOR_AROUSAL_MANDALA_CLOSED,
+            Transform::rotate(-90.0),
+            Transform::translate((0.0, 0.0)),
+            Transform::scale((0.1, 1.0)),
+        );
+        let mut mandala_arousal = Mandala::new(
+            MANDALA_AROUSAL_PETAL_SVG_NAME,
+            MANDALA_CENTER,
+            MANDALA_SCALE,
+            20,
+            mandala_arousal_state_open,
+            mandala_arousal_state_closed,
+            0.0,
+        );
         mandala_valence.start_transition(0.0, 3.0, 0.0);
+        mandala_arousal.start_transition(0.0, 3.0, 1.0);
 
         let eeg_view_state = EegViewState::new();
         let start_time = Instant::now();
@@ -259,6 +297,7 @@ impl State for AppState {
             sound_click,
             sound_blah,
             mandala_valence,
+            mandala_arousal,
             left_button_color: COLOR_CLEAR,
             right_button_color: COLOR_CLEAR,
             eeg_view_state,
@@ -375,6 +414,8 @@ impl State for AppState {
             let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED);
             self.mandala_valence
                 .draw(self.seconds_since_start(), &mut shape_renderer);
+            self.mandala_arousal
+                .draw(self.seconds_since_start(), &mut shape_renderer);
             window.mesh().extend(&mesh);
 
             // LOGO
@@ -382,7 +423,7 @@ impl State for AppState {
                 window.draw(
                     &image
                         .area()
-                        .with_center((SCREEN_SIZE.0 / 2.0, SCREEN_SIZE.1 / 2.0)),
+                        .with_center((SCREEN_SIZE.0 / 2.0, SCREEN_SIZE.1 / 4.0)),
                     Img(&image),
                 );
                 Ok(())
