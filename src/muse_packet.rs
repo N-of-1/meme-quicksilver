@@ -172,7 +172,7 @@ pub fn parse_muse_message_type(raw_message: Message) -> Option<MuseMessageType> 
             let c = get_float_from_args(2, &args);
             let d = get_float_from_args(3, &args);
 
-            println!("Raw Alpha: [{:#?}, {:#?}, {:#?}, {:#?}]", a, b, c, d);
+            // println!("Raw Alpha: [{:#?}, {:#?}, {:#?}, {:#?}]", a, b, c, d);
 
             Some(MuseMessageType::Alpha { a, b, c, d })
         }

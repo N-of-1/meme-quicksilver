@@ -401,7 +401,7 @@ impl State for AppState {
 
         let (normalized_valence_option, normalized_arousal_option) =
             self.muse_model.receive_packets();
-        if self.frame_count > FRAME_SETTLE {
+        if self.frame_count > FRAME_TITLE {
             let current_time = self.seconds_since_start();
             println!("Time: {}", current_time);
             if let Some(normalized_valence) = normalized_valence_option {

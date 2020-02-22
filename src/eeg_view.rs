@@ -267,35 +267,35 @@ fn _range_raw_values_to_0_to_9(val: f32) -> usize {
 }
 
 fn draw_mandala_view(_model: &MuseModel, _window: &mut Window, _eeg_view_state: &mut EegViewState) {
-    match (
-        model.valence.moving_average(),
-        model.arousal.moving_average(),
-    ) {
-        (Some(val), Some(arou)) => {
+    // match (
+    //     model.valence.moving_average(),
+    //     model.arousal.moving_average(),
+    // ) {
+    //     (Some(val), Some(arou)) => {
 
-    // Shift raw values from -3.0 to 3.0 range into 0..9 (camped)
-    let vma = range_raw_values_to_0_to_9(val);
-    let ama = range_raw_values_to_0_to_9(arou);
+    // // Shift raw values from -3.0 to 3.0 range into 0..9 (camped)
+    // let vma = range_raw_values_to_0_to_9(val);
+    // let ama = range_raw_values_to_0_to_9(arou);
 
-    if vma > eeg_view_state.valence_index + 1 {
-        eeg_view_state.valence_index = (eeg_view_state.valence_index + 1).min(9);
-    } else if vma < eeg_view_state.valence_index - 1 {
-        eeg_view_state.valence_index = (eeg_view_state.valence_index - 1).max(0);
-    }
+    // if vma > eeg_view_state.valence_index + 1 {
+    //     eeg_view_state.valence_index = (eeg_view_state.valence_index + 1).min(9);
+    // } else if vma < eeg_view_state.valence_index - 1 {
+    //     eeg_view_state.valence_index = (eeg_view_state.valence_index - 1).max(0);
+    // }
 
-    if ama > eeg_view_state.arousal_index + 1 {
-        eeg_view_state.arousal_index = (eeg_view_state.arousal_index + 1).min(9);
-    } else if ama < eeg_view_state.valence_index - 1 {
-        eeg_view_state.arousal_index = (eeg_view_state.arousal_index - 1).max(0);
-    }
-    Draw from original image set
-    eeg_view_state
-        .pos_neg
-        .draw(eeg_view_state.valence_index, window);
-    eeg_view_state
-        .calm_ext
-        .draw(eeg_view_state.arousal_index, window);
-    }
+    // if ama > eeg_view_state.arousal_index + 1 {
+    //     eeg_view_state.arousal_index = (eeg_view_state.arousal_index + 1).min(9);
+    // } else if ama < eeg_view_state.valence_index - 1 {
+    //     eeg_view_state.arousal_index = (eeg_view_state.arousal_index - 1).max(0);
+    // }
+    // // Draw from original image set
+    // eeg_view_state
+    //     .pos_neg
+    //     .draw(eeg_view_state.valence_index, window);
+    // eeg_view_state
+    //     .calm_ext
+    //     .draw(eeg_view_state.arousal_index, window);
+    // }
     // _ => draw_eeg_values_view(model, window, eeg_view_state), // Nothing to display- help the user setup
     // };
 }
