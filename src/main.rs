@@ -401,20 +401,25 @@ impl State for AppState {
 
         let (normalized_valence_option, normalized_arousal_option) =
             self.muse_model.receive_packets();
-        let current_time = self.seconds_since_start();
-        if let Some(normalized_valence) = normalized_valence_option {
-            self.mandala_valence.start_transition(
-                current_time,
-                MANDALA_TRANSITION_DURATION,
-                normalized_valence,
-            );
-        }
-        if let Some(normalized_arousal) = normalized_arousal_option {
-            self.mandala_arousal.start_transition(
-                current_time,
-                MANDALA_TRANSITION_DURATION,
-                normalized_arousal,
-            );
+        if self.frame_count > FRAME_SETTLE {
+            let current_time = self.seconds_since_start();
+            println!("Time: {}", current_time);
+            if let Some(normalized_valence) = normalized_valence_option {
+                println!("Normalized valence: {}", normalized_valence);
+                self.mandala_valence.start_transition(
+                    current_time,
+                    MANDALA_TRANSITION_DURATION,
+                    normalized_valence,
+                );
+            }
+            if let Some(normalized_arousal) = normalized_arousal_option {
+                println!("Normalized arousal: {}", normalized_arousal);
+                self.mandala_arousal.start_transition(
+                    current_time,
+                    MANDALA_TRANSITION_DURATION,
+                    normalized_arousal,
+                );
+            }
         }
         self.muse_model.count_down();
 
@@ -438,14 +443,6 @@ impl State for AppState {
         window.clear(background_color)?;
 
         if self.frame_count < FRAME_TITLE {
-            // let mut mesh = Mesh::new();
-
-            // let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED);
-            // self.mandala_valence
-            //     .draw(self.seconds_since_start(), &mut shape_renderer);
-            // self.mandala_arousal
-            //     .draw(self.seconds_since_start(), &mut shape_renderer);
-            // window.mesh().extend(&mesh);
             self.draw_mandala(window);
 
             // LOGO

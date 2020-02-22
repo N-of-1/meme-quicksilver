@@ -500,7 +500,7 @@ impl MuseModel {
             }
             MuseMessageType::Delta { a, b, c, d } => {
                 self.delta = [a, b, c, d];
-                // println!("Delta {} {} {} {}", a, b, c, d);
+                println!("Delta {} {} {} {}", a, b, c, d);
                 self.send((time, MuseMessageType::Delta { a, b, c, d }));
                 Ok(true)
             }

@@ -171,12 +171,16 @@ pub fn parse_muse_message_type(raw_message: Message) -> Option<MuseMessageType> 
             d: get_float_from_args(3, &args),
         }),
 
-        "/muse/elements/alpha_absolute" => Some(MuseMessageType::Alpha {
-            a: get_float_from_args(0, &args),
-            b: get_float_from_args(1, &args),
-            c: get_float_from_args(2, &args),
-            d: get_float_from_args(3, &args),
-        }),
+        "/muse/elements/alpha_absolute" => {
+            let a = get_float_from_args(0, &args);
+            let b = get_float_from_args(1, &args);
+            let c = get_float_from_args(2, &args);
+            let d = get_float_from_args(3, &args);
+
+            println!("Raw Alpha: [{:#?}, {:#?}, {:#?}, {:#?}]", a, b, c, d);
+
+            Some(MuseMessageType::Alpha { a, b, c, d })
+        }
 
         "/muse/elements/beta_absolute" => Some(MuseMessageType::Beta {
             a: get_float_from_args(0, &args),
