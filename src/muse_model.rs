@@ -484,6 +484,7 @@ impl MuseModel {
                 Ok(false)
             }
             MuseMessageType::Alpha { a, b, c, d } => {
+                println!("State updated with alpha: {:?} {:?} {:?} {:?}", a, b, c, d);
                 self.alpha = [a, b, c, d];
                 self.send((time, MuseMessageType::Alpha { a, b, c, d }));
                 Ok(true)

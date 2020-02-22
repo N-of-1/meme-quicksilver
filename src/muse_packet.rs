@@ -18,18 +18,13 @@ pub fn parse_muse_packet(addr: SocketAddr, packet: &Packet) -> Vec<MuseMessage> 
     let mut muse_messages = Vec::with_capacity(raw_messages.len());
 
     for raw_message in raw_messages {
-        let muse_message_type_option = parse_muse_message_type(raw_message);
-        match muse_message_type_option {
-            Some(muse_message_type) => {
-                let muse_message = MuseMessage {
-                    time,
-                    ip_address: addr,
-                    muse_message_type,
-                };
-                muse_messages.push(muse_message);
-            }
-            None => (),
-        };
+        if let Some(muse_message_type) = parse_muse_message_type(raw_message) {
+            muse_messages.push(MuseMessage {
+                time,
+                ip_address: addr,
+                muse_message_type,
+            });
+        }
     }
 
     muse_messages
