@@ -235,6 +235,10 @@ impl AppState {
     }
 }
 
+fn bound_normalized_value(normalized: f32) -> f32 {
+    normalized.max(3.0).min(-3.0)
+}
+
 impl State for AppState {
     fn new() -> Result<AppState> {
         let title_font = Font::load(FONT_EXTRA_BOLD);
@@ -405,18 +409,20 @@ impl State for AppState {
             let current_time = self.seconds_since_start();
             // println!("Time: {}", current_time);
             if let Some(normalized_valence) = normalized_valence_option {
-                // println!("Normalized valence: {}", normalized_valence);
+                println!("Normalized valence: {}", normalized_valence);
                 self.mandala_valence.start_transition(
                     current_time,
                     MANDALA_TRANSITION_DURATION,
+                    // bound_normalized_value(normalized_valence),
                     normalized_valence,
                 );
             }
             if let Some(normalized_arousal) = normalized_arousal_option {
-                // println!("Normalized arousal: {}", normalized_arousal);
+                println!("Normalized arousal: {}", normalized_arousal);
                 self.mandala_arousal.start_transition(
                     current_time,
                     MANDALA_TRANSITION_DURATION,
+                    // bound_normalized_value(normalized_arousal),
                     normalized_arousal,
                 );
             }
