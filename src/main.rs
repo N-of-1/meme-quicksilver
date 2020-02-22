@@ -119,7 +119,7 @@ const COLOR_VALENCE_MANDALA_CLOSED: Color = Color {
     r: 64.0 / 256.0,
     g: 224.0 / 256.0,
     b: 208.0 / 256.0,
-    a: 0.2,
+    a: 0.5,
 };
 const COLOR_VALENCE_MANDALA_OPEN: Color = Color {
     // Crimson, Negative spiky emotion
@@ -136,10 +136,10 @@ const COLOR_AROUSAL_MANDALA_CLOSED: Color = Color {
     a: 0.4,
 };
 const COLOR_AROUSAL_MANDALA_OPEN: Color = Color {
-    // Red, opague, high arousal
-    r: 255.0 / 255.0,
-    g: 30.0 / 255.0,
-    b: 65.0 / 256.0,
+    // Orange, opaque, high arousal
+    r: 1.0,
+    g: 0.67,
+    b: 0.0,
     a: 1.0,
 };
 
@@ -277,21 +277,21 @@ impl State for AppState {
         );
         let mandala_arousal_state_open = MandalaState::new(
             COLOR_AROUSAL_MANDALA_OPEN,
-            Transform::rotate(90),
-            Transform::translate((50.0, 0.0)),
-            Transform::scale((0.8, 0.8)),
+            Transform::rotate(5),
+            Transform::translate((0.0, 0.0)),
+            Transform::scale((0.4, 0.8)),
         );
         let mandala_arousal_state_closed = MandalaState::new(
             COLOR_AROUSAL_MANDALA_CLOSED,
-            Transform::rotate(-90.0),
+            Transform::rotate(-5.0),
             Transform::translate((0.0, 0.0)),
-            Transform::scale((0.1, 1.0)),
+            Transform::scale((0.5, 1.0)),
         );
         let mut mandala_arousal = Mandala::new(
             MANDALA_AROUSAL_PETAL_SVG_NAME,
             MANDALA_CENTER,
             MANDALA_SCALE,
-            20,
+            12,
             mandala_arousal_state_open,
             mandala_arousal_state_closed,
             0.0,
@@ -403,7 +403,7 @@ impl State for AppState {
             self.muse_model.receive_packets();
         if self.frame_count > FRAME_TITLE {
             let current_time = self.seconds_since_start();
-            println!("Time: {}", current_time);
+            // println!("Time: {}", current_time);
             if let Some(normalized_valence) = normalized_valence_option {
                 println!("Normalized valence: {}", normalized_valence);
                 self.mandala_valence.start_transition(
