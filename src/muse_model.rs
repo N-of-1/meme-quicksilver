@@ -392,9 +392,11 @@ impl MuseModel {
         }
     }
 
-    pub fn receive_packets(&mut self) {
+    pub fn receive_packets(&mut self) -> (Option<f32>, Option<f32>) {
         let muse_messages = self.inner_receiver.receive_packets();
         let mut updated_numeric_values = false;
+        let mut normalized_valence_option = None;
+        let mut normalized_arousal_option = None;
 
         for muse_message in muse_messages {
             updated_numeric_values = updated_numeric_values
@@ -405,21 +407,16 @@ impl MuseModel {
         }
 
         if updated_numeric_values {
-            let (ua, uv) = (self.update_arousal(), self.update_valence());
+            let _valence_updated = self.update_valence();
+            let _arousal_updated = self.update_arousal();
+            let vma = self.valence.moving_average();
+            let ama = self.arousal.moving_average();
 
-            if let (Some(valence), Some(arousal)) =
-                (self.valence.moving_average(), self.arousal.moving_average())
-            {
-                let normalized_valence = self.valence.normalize(Some(valence)).unwrap();
-                let normalized_arousal = self.arousal.normalize(Some(arousal)).unwrap();
-                println!(
-                    "Valence: {}   Arousal:{}",
-                    normalized_valence, normalized_arousal,
-                );
-            } else {
-                println!("Update arousal: {}    Update valence: {}", ua, uv);
-            }
+            normalized_valence_option = self.valence.normalize(vma);
+            normalized_arousal_option = self.arousal.normalize(ama);
         }
+
+        (normalized_valence_option, normalized_arousal_option)
     }
 
     /// Front assymetry- higher values mean more positive mood

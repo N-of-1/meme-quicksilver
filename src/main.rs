@@ -61,6 +61,8 @@ const FRAME_MEME: u64 = FRAME_SETTLE + 4 * FPS;
 const IMAGE_LOGO: &str = "Nof1-logo.png";
 const MANDALA_VALENCE_PETAL_SVG_NAME: &str = "mandala_valence_petal.svg";
 const MANDALA_AROUSAL_PETAL_SVG_NAME: &str = "mandala_arousal_petal.svg";
+/// The visual slew time from current value to newly set value. Keep in mind that the newly set value is already smoothed, so this number should be small to provide consinuous interpolation between new values, not large to provide an additional layer of (less carefully controlled) smoothing filter.
+const MANDALA_TRANSITION_DURATION: f32 = 0.5;
 
 const FONT_EXTRA_BOLD: &str = "WorkSans-ExtraBold.ttf";
 const FONT_MULI: &str = "Muli.ttf";
@@ -177,17 +179,16 @@ pub trait OscSocket: Sized {
 
 struct AppState {
     frame_count: u64,
+    start_time: Instant,
     title_text: Asset<Image>,
     help_text: Asset<Image>,
     logo: Asset<Image>,
-
     sound_click: Asset<Sound>,
     sound_blah: Asset<Sound>,
     left_button_color: Color,
     right_button_color: Color,
     mandala_valence: Mandala,
     mandala_arousal: Mandala,
-    start_time: Instant,
     muse_model: MuseModel,
     eeg_view_state: EegViewState,
     _rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
@@ -219,6 +220,18 @@ impl AppState {
 impl AppState {
     fn seconds_since_start(&self) -> f32 {
         self.start_time.elapsed().as_nanos() as f32 / 1000000000.0
+    }
+
+    fn draw_mandala(&mut self, window: &mut Window) {
+        let mut mesh = Mesh::new();
+
+        let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED);
+        let seconds_since_start = self.seconds_since_start();
+        self.mandala_valence
+            .draw(seconds_since_start, &mut shape_renderer);
+        self.mandala_arousal
+            .draw(seconds_since_start, &mut shape_renderer);
+        window.mesh().extend(&mesh);
     }
 }
 
@@ -291,6 +304,7 @@ impl State for AppState {
 
         Ok(AppState {
             frame_count: 0,
+            start_time,
             title_text,
             help_text,
             logo,
@@ -302,12 +316,11 @@ impl State for AppState {
             right_button_color: COLOR_CLEAR,
             eeg_view_state,
             _rx_eeg: rx_eeg,
-            start_time,
             muse_model,
         })
     }
 
-    // This is called 60 times per second
+    // This is called UPS times per second
     fn update(&mut self, window: &mut Window) -> Result<()> {
         // EXIT APP
         #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
@@ -386,7 +399,23 @@ impl State for AppState {
             self.muse_model.display_type = DisplayType::EegValues;
         }
 
-        self.muse_model.receive_packets();
+        let (normalized_valence_option, normalized_arousal_option) =
+            self.muse_model.receive_packets();
+        let current_time = self.seconds_since_start();
+        if let Some(normalized_valence) = normalized_valence_option {
+            self.mandala_valence.start_transition(
+                current_time,
+                MANDALA_TRANSITION_DURATION,
+                normalized_valence,
+            );
+        }
+        if let Some(normalized_arousal) = normalized_arousal_option {
+            self.mandala_arousal.start_transition(
+                current_time,
+                MANDALA_TRANSITION_DURATION,
+                normalized_arousal,
+            );
+        }
         self.muse_model.count_down();
 
         Ok(())
@@ -400,7 +429,7 @@ impl State for AppState {
         Ok(())
     }
 
-    // This is called 30 times per second
+    // This is called FPS times per second
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         let background_color = match self.frame_count < FRAME_TITLE {
             true => Color::BLACK,
@@ -409,14 +438,15 @@ impl State for AppState {
         window.clear(background_color)?;
 
         if self.frame_count < FRAME_TITLE {
-            let mut mesh = Mesh::new();
+            // let mut mesh = Mesh::new();
 
-            let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED);
-            self.mandala_valence
-                .draw(self.seconds_since_start(), &mut shape_renderer);
-            self.mandala_arousal
-                .draw(self.seconds_since_start(), &mut shape_renderer);
-            window.mesh().extend(&mesh);
+            // let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED);
+            // self.mandala_valence
+            //     .draw(self.seconds_since_start(), &mut shape_renderer);
+            // self.mandala_arousal
+            //     .draw(self.seconds_since_start(), &mut shape_renderer);
+            // window.mesh().extend(&mesh);
+            self.draw_mandala(window);
 
             // LOGO
             self.logo.execute(|image| {
@@ -459,7 +489,10 @@ impl State for AppState {
             })?;
             self.right_button_color = COLOR_BUTTON;
         } else if self.frame_count < FRAME_SETTLE {
-            eeg_view::draw_view(&self.muse_model, window, &mut self.eeg_view_state);
+            match self.muse_model.display_type {
+                DisplayType::Mandala => self.draw_mandala(window),
+                _ => eeg_view::draw_view(&self.muse_model, window, &mut self.eeg_view_state),
+            }
         } else if self.frame_count < FRAME_MEME {
             // LEFT BUTTON
             let left_color = self.left_button_color;
