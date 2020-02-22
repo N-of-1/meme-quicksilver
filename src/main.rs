@@ -283,15 +283,15 @@ impl State for AppState {
         );
         let mandala_arousal_state_closed = MandalaState::new(
             COLOR_AROUSAL_MANDALA_CLOSED,
-            Transform::rotate(-5.0),
+            Transform::rotate(90.0),
             Transform::translate((0.0, 0.0)),
-            Transform::scale((0.5, 1.0)),
+            Transform::scale((0.2, 1.0)),
         );
         let mut mandala_arousal = Mandala::new(
             MANDALA_AROUSAL_PETAL_SVG_NAME,
             MANDALA_CENTER,
             MANDALA_SCALE,
-            12,
+            20,
             mandala_arousal_state_open,
             mandala_arousal_state_closed,
             0.0,
@@ -405,7 +405,7 @@ impl State for AppState {
             let current_time = self.seconds_since_start();
             // println!("Time: {}", current_time);
             if let Some(normalized_valence) = normalized_valence_option {
-                println!("Normalized valence: {}", normalized_valence);
+                // println!("Normalized valence: {}", normalized_valence);
                 self.mandala_valence.start_transition(
                     current_time,
                     MANDALA_TRANSITION_DURATION,
@@ -413,7 +413,7 @@ impl State for AppState {
                 );
             }
             if let Some(normalized_arousal) = normalized_arousal_option {
-                println!("Normalized arousal: {}", normalized_arousal);
+                // println!("Normalized arousal: {}", normalized_arousal);
                 self.mandala_arousal.start_transition(
                     current_time,
                     MANDALA_TRANSITION_DURATION,

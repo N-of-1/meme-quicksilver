@@ -441,19 +441,19 @@ impl MuseModel {
     /// Calculate the current arousal value and add it to the length-limited history
     pub fn update_arousal(&mut self) -> bool {
         let abs_arousal = self.calc_abolute_arousal();
-        println!(
-            "   abs arousal: {}   alpha0: {}",
-            abs_arousal, self.alpha[0]
-        );
+        // println!(
+        //     "   abs arousal: {}   alpha0: {}",
+        //     abs_arousal, self.alpha[0]
+        // );
         self.arousal.set(abs_arousal)
     }
 
     /// Calculate the current valence value and add it to the length-limited history
     pub fn update_valence(&mut self) -> bool {
         let abs_valence = self.calc_absolute_valence();
-        if abs_valence.is_finite() {
-            println!("abs valence: {}   alpha0: {}", abs_valence, self.alpha[0]);
-        }
+        // if abs_valence.is_finite() {
+        //     println!("abs valence: {}   alpha0: {}", abs_valence, self.alpha[0]);
+        // }
         self.valence.set(abs_valence)
     }
 

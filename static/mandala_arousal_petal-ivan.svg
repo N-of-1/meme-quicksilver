@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 744.09448819 1052.3622047"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   sodipodi:docname="petal_bad.svg">
+  <defs
+     id="defs4">
+    <style
+       id="style4672"
+       type="text/css">
+*{stroke-linecap:butt;stroke-linejoin:round;}
+  </style>
+    <style
+       id="style5017"
+       type="text/css">
+*{stroke-linecap:butt;stroke-linejoin:round;}
+  </style>
+    <style
+       id="style5426"
+       type="text/css">
+*{stroke-linecap:butt;stroke-linejoin:round;}
+  </style>
+    <style
+       id="style4301"
+       type="text/css">
+*{stroke-linecap:butt;stroke-linejoin:round;}
+  </style>
+    <style
+       id="style4692"
+       type="text/css">
+*{stroke-linecap:butt;stroke-linejoin:round;}
+  </style>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.54405168"
+     inkscape:cx="332.46759"
+     inkscape:cy="832.79263"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1304"
+     inkscape:window-height="745"
+     inkscape:window-x="54"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="patch_13"
+       style="stroke-linecap:butt;stroke-linejoin:round"
+       transform="translate(-457.56,-250.29701)">
+      <path
+         id="path4733"
+         style="opacity:0.5;fill:#00bfbf;stroke:#00bfbf;stroke-linecap:butt;stroke-linejoin:miter"
+         d="m 0.0,0.0 m 42.51429,-31.68 c -12.89708,2.85115 -12.87192,7.55855 13.94529,-5.8839 q -37.58721,19.23664 0.50013,15.02479 c -2.26794,-36.13709 -28.82931,-9.64934 6.01746,-1.89051 q -9.19813,-0.26193 -14.0269,-14.69887 21.82318,17.69526 -9.86954,5.55162 -14.56792,5.59333 -2.90984,-4.20921 8.6825,8.59616 54.3469,-34.32325 -37.47519,24.89017 -27.98735,-13.265019 -29.3124,23.761299 4.80759,18.612679 c -33.85163,10.61627 -31.19638,15.23797 -5.4833,12.50222 -31.7261,-27.103997 8.54677,-3.361 -5.62854,-3.6328 q -20.14456,13.49322 8.7306,10.13916 17.85702,-7.09148 6.72284,12.83727 c -38.80627,29.0631 57.0431,49.54001 -34.54879,48.05113 113.52941,-20.22383 28.07981,-61.84103 125.77733,-50.51108 -104.43773,-26.78626 -78.70084,26.29262 -21.55169,47.43382 q -53.45311,-14.74082 -98.9468,16.47277 c 87.82798,-25.34409 6.03585,-99.73519 -10.25383,-56.55744 q 78.85136,16.522 10.35844,-1.65338 l 26.18988,-13.71784 z"
+         clip-path="url(#p7e5c5a7dc5)"
+         inkscape:connector-curvature="0" />
+    </g>
+  </g>
+</svg>
