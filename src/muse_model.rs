@@ -6,11 +6,12 @@ use crate::muse_packet::*;
 use std::sync::mpsc::SendError;
 
 // use log::*;
+use csv::Writer;
 use num_traits::float::Float;
 use std::net::SocketAddr;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
-use std::{convert::From, time::Duration};
+use std::{convert::From, fs::File, time::Duration};
 
 const FOREHEAD_COUNTDOWN: i32 = 5; // 60th of a second counts
 const BLINK_COUNTDOWN: i32 = 5;
@@ -271,6 +272,13 @@ pub struct MuseModel {
     pub display_type: DisplayType,
     pub arousal: NormalizedValue<f32>,
     pub valence: NormalizedValue<f32>,
+    eeg_log_writer: Writer<File>, // Raw EEG values every time they arrive, CSV
+    alpha_log_writer: Writer<File>, // Processed EEG values every time they arrive, CSV
+    beta_log_writer: Writer<File>, // Processed EEG values every time they arrive, CSV
+    gamma_log_writer: Writer<File>, // Processed EEG values every time they arrive, CSV
+    delta_log_writer: Writer<File>, // Processed EEG values every time they arrive, CSV
+    theta_log_writer: Writer<File>, // Processed EEG values every time they arrive, CSV
+    other_log_writer: Writer<File>, // Other values every time they arrive, CSV
 }
 
 fn std_deviation<T>(data: &Vec<T>, mean: Option<T>) -> Option<T>
@@ -335,6 +343,34 @@ impl MuseModel {
             mpsc::channel();
 
         let inner_receiver = inner_receiver::InnerMessageReceiver::new();
+        let mut eeg_log_writer = crate::create_log_writer("eeg.csv");
+        eeg_log_writer
+            .write_record(&["TP9", "AF7", "AF8", "TP10"])
+            .expect("Can not write EEG");
+        let mut alpha_log_writer = crate::create_log_writer("alpha.csv");
+        alpha_log_writer
+            .write_record(&["Alpha TP9", "Alpha AF7", "Alpha AF8", "Alpha TP10"])
+            .expect("Can not write alpha.csv header");
+        let mut beta_log_writer = crate::create_log_writer("beta.csv");
+        beta_log_writer
+            .write_record(&["Beta TP9", "Beta AF7", "Beta AF8", "Beta TP10"])
+            .expect("Can not write beta.csv header");
+        let mut gamma_log_writer = crate::create_log_writer("gamma.csv");
+        gamma_log_writer
+            .write_record(&["Gamma TP9", "Gamma AF7", "Gamma AF8", "Gamma TP10"])
+            .expect("Can not write gamma.csv header");
+        let mut delta_log_writer = crate::create_log_writer("delta.csv");
+        delta_log_writer
+            .write_record(&["Delta TP9", "Delta AF7", "Delta AF8", "Delta TP10"])
+            .expect("Can not write delta.csv header");
+        let mut theta_log_writer = crate::create_log_writer("theta.csv");
+        theta_log_writer
+            .write_record(&["Theta TP9", "Theta AF7", "Theta AF8", "Theta TP10"])
+            .expect("Can not write theta.csv header");
+        let mut other_log_writer = crate::create_log_writer("other.csv");
+        other_log_writer
+            .write_record(&["TIME", "RECORD"])
+            .expect("Can not write other.csv header");
 
         (
             rx_eeg,
@@ -358,8 +394,95 @@ impl MuseModel {
                 display_type: DisplayType::Mandala, // Current drawing mode
                 arousal: NormalizedValue::new(),
                 valence: NormalizedValue::new(),
+                eeg_log_writer,
+                alpha_log_writer,
+                beta_log_writer,
+                gamma_log_writer,
+                delta_log_writer,
+                theta_log_writer,
+                other_log_writer,
             },
         )
+    }
+
+    fn log_alpha(&mut self, receive_time: Duration) {
+        let time = format!("{:?}", receive_time);
+        let tp9 = format!("{:?}", self.alpha[TP9]);
+        let af7 = format!("{:?}", self.alpha[AF7]);
+        let af8 = format!("{:?}", self.alpha[AF8]);
+        let tp10 = format!("{:?}", self.alpha[TP10]);
+
+        self.alpha_log_writer
+            .write_record(&[&time, &tp9, &af7, &af8, &tp10])
+            .expect("Can not add row to alpha.csv");
+    }
+
+    fn log_beta(&mut self, receive_time: Duration) {
+        let time = format!("{:?}", receive_time);
+        let tp9 = format!("{:?}", self.beta[TP9]);
+        let af7 = format!("{:?}", self.beta[AF7]);
+        let af8 = format!("{:?}", self.beta[AF8]);
+        let tp10 = format!("{:?}", self.beta[TP10]);
+
+        self.beta_log_writer
+            .write_record(&[&time, &tp9, &af7, &af8, &tp10])
+            .expect("Can not add row to beta.csv");
+    }
+
+    fn log_gamma(&mut self, receive_time: Duration) {
+        let time = format!("{:?}", receive_time);
+        let tp9 = format!("{:?}", self.gamma[TP9]);
+        let af7 = format!("{:?}", self.gamma[AF7]);
+        let af8 = format!("{:?}", self.gamma[AF8]);
+        let tp10 = format!("{:?}", self.gamma[TP10]);
+
+        self.gamma_log_writer
+            .write_record(&[&time, &tp9, &af7, &af8, &tp10])
+            .expect("Can not add row to gamma.csv");
+    }
+
+    fn log_delta(&mut self, receive_time: Duration) {
+        let time = format!("{:?}", receive_time);
+        let tp9 = format!("{:?}", self.delta[TP9]);
+        let af7 = format!("{:?}", self.delta[AF7]);
+        let af8 = format!("{:?}", self.delta[AF8]);
+        let tp10 = format!("{:?}", self.delta[TP10]);
+
+        self.delta_log_writer
+            .write_record(&[&time, &tp9, &af7, &af8, &tp10])
+            .expect("Can not add row to delta.csv");
+    }
+
+    fn log_theta(&mut self, receive_time: Duration) {
+        let time = format!("{:?}", receive_time);
+        let tp9 = format!("{:?}", self.theta[TP9]);
+        let af7 = format!("{:?}", self.theta[AF7]);
+        let af8 = format!("{:?}", self.theta[AF8]);
+        let tp10 = format!("{:?}", self.theta[TP10]);
+
+        self.theta_log_writer
+            .write_record(&[&time, &tp9, &af7, &af8, &tp10])
+            .expect("Can not add row to theta.csv");
+    }
+
+    fn log_eeg(&mut self, receive_time: Duration, eeg_values: &[f32; 4]) {
+        let time = format!("{:?}", receive_time);
+        let tp9 = format!("{:?}", eeg_values[TP9]);
+        let af7 = format!("{:?}", eeg_values[AF7]);
+        let af8 = format!("{:?}", eeg_values[AF8]);
+        let tp10 = format!("{:?}", eeg_values[TP10]);
+
+        self.eeg_log_writer
+            .write_record(&[&time, &tp9, &af7, &af8, &tp10])
+            .expect("Can not add row to eeg.csv");
+    }
+
+    fn log_other(&mut self, receive_time: Duration, other: &str) {
+        let time = format!("{:?}", receive_time);
+
+        self.other_log_writer
+            .write_record(&[&time, other])
+            .expect("Can not add row to other.csv");
     }
 
     /// User has recently clamped their teeth, creating myoelectric interference so interrupting the EEG signal
@@ -458,10 +581,10 @@ impl MuseModel {
     }
 
     /// Send a value to the connected rx_eeg receiver
-    fn send(&self, timed_muse_message: TimedMuseMessage) {
-        let success = self.tx_eeg.send(timed_muse_message);
-        assert!(!success.is_err(), "Can not send message to local receiver");
-    }
+    // fn send(&self, timed_muse_message: TimedMuseMessage) {
+    //     let success = self.tx_eeg.send(timed_muse_message);
+    //     assert!(!success.is_err(), "Can not send message to local receiver");
+    // }
 
     /// Update state based on an incoming message
     fn handle_muse_message(
@@ -480,70 +603,92 @@ impl MuseModel {
             }
             MuseMessageType::Gyro { x, y, z } => {
                 self.gyro = [x, y, z];
-                self.send((time, MuseMessageType::Gyro { x, y, z }));
+                self.log_other(time, &format!("Gyro, {:?}, {:?}, {:?}", x, y, z));
+                // self.send((time, MuseMessageType::Gyro { x, y, z }));
                 Ok(false)
             }
             MuseMessageType::Horseshoe { a, b, c, d } => {
                 self.horseshoe = [a, b, c, d];
-                self.send((time, MuseMessageType::Horseshoe { a, b, c, d }));
+                self.log_other(
+                    time,
+                    &format!("Horseshoe, {:?}, {:?}, {:?}, {:?}", a, b, c, d),
+                );
+                // self.send((time, MuseMessageType::Horseshoe { a, b, c, d }));
                 Ok(false)
             }
             MuseMessageType::Eeg { a, b, c, d } => {
-                self.send((time, MuseMessageType::Eeg { a, b, c, d }));
+                self.log_eeg(time, &[a, b, c, d]);
+                // self.send((time, MuseMessageType::Eeg { a, b, c, d }));
                 Ok(false)
             }
             MuseMessageType::Alpha { a, b, c, d } => {
                 // println!("State updated with alpha: {:?} {:?} {:?} {:?}", a, b, c, d);
                 self.alpha = [a, b, c, d];
-                self.send((time, MuseMessageType::Alpha { a, b, c, d }));
+                self.log_alpha(time);
+                // self.send((time, MuseMessageType::Alpha { a, b, c, d }));
                 Ok(true)
             }
             MuseMessageType::Beta { a, b, c, d } => {
                 self.beta = [a, b, c, d];
-                self.send((time, MuseMessageType::Beta { a, b, c, d }));
+                self.log_beta(time);
+                // self.send((time, MuseMessageType::Beta { a, b, c, d }));
                 Ok(true)
             }
             MuseMessageType::Gamma { a, b, c, d } => {
                 self.gamma = [a, b, c, d];
-                self.send((time, MuseMessageType::Gamma { a, b, c, d }));
+                self.log_gamma(time);
+                // self.send((time, MuseMessageType::Gamma { a, b, c, d }));
                 Ok(true)
             }
             MuseMessageType::Delta { a, b, c, d } => {
                 self.delta = [a, b, c, d];
-                println!("Delta {} {} {} {}", a, b, c, d);
-                self.send((time, MuseMessageType::Delta { a, b, c, d }));
+                self.log_delta(time);
+                // println!("Delta {} {} {} {}", a, b, c, d);
+                // self.send((time, MuseMessageType::Delta { a, b, c, d }));
                 Ok(true)
             }
             MuseMessageType::Theta { a, b, c, d } => {
                 self.theta = [a, b, c, d];
+                self.log_theta(time);
                 // println!("Theta {} {} {} {}", a, b, c, d);
-                self.send((time, MuseMessageType::Theta { a, b, c, d }));
+                // self.send((time, MuseMessageType::Theta { a, b, c, d }));
                 Ok(true)
             }
             MuseMessageType::Batt { batt } => {
                 self.batt = batt;
-                self.send((muse_message.time, MuseMessageType::Batt { batt }));
+                self.log_other(time, &format!("Battery, {:?}", batt));
+                // self.send((muse_message.time, MuseMessageType::Batt { batt }));
                 Ok(false)
             }
             MuseMessageType::TouchingForehead { touch } => {
-                if !touch {
+                let mut i = 0;
+                if touch {
+                    i = 1;
+                } else {
                     self.touching_forehead_countdown = FOREHEAD_COUNTDOWN;
-                }
-                self.send((time, MuseMessageType::TouchingForehead { touch }));
+                };
+                self.log_other(time, &format!("Battery, {:?}", i));
+                //                self.send((time, MuseMessageType::TouchingForehead { touch }));
                 Ok(false)
             }
             MuseMessageType::Blink { blink } => {
+                let mut i = 0;
                 if blink {
                     self.blink_countdown = BLINK_COUNTDOWN;
-                }
-                self.send((time, MuseMessageType::Blink { blink }));
+                    i = 1;
+                };
+                self.log_other(time, &format!("Blink, {:?}", i));
+                //                self.send((time, MuseMessageType::Blink { blink }));
                 Ok(false)
             }
             MuseMessageType::JawClench { clench } => {
+                let mut i = 0;
                 if clench {
                     self.jaw_clench_countdown = CLENCH_COUNTDOWN;
-                }
-                self.send((time, MuseMessageType::JawClench { clench }));
+                    i = 1;
+                };
+                self.log_other(time, &format!("Clench, {:?}", i));
+                // self.send((time, MuseMessageType::JawClench { clench }));
                 Ok(false)
             }
         }

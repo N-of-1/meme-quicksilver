@@ -19,6 +19,7 @@ extern crate num_traits;
 extern crate quicksilver;
 
 use arr_macro::arr;
+use csv::Writer;
 use eeg_view::EegViewState;
 use log::{error, info};
 use mandala_quicksilver::{Mandala, MandalaState};
@@ -34,8 +35,11 @@ use quicksilver::{
     sound::Sound,
     Future, Result,
 };
+use std::error::Error;
+use std::fs::File;
 use std::sync::mpsc::Receiver;
 use std::time::{Duration, Instant};
+
 mod eeg_view;
 mod muse_model;
 
@@ -239,11 +243,18 @@ fn bound_normalized_value(normalized: f32) -> f32 {
     normalized.max(3.0).min(-3.0)
 }
 
+/// Create a log of values and events collected during a session
+fn create_log_writer(filename: &str) -> Writer<File> {
+    let writer: Writer<File> =
+        Writer::from_path("foo.csv").expect("Could not open CSV file for writing");
+
+    writer
+}
+
 impl State for AppState {
     fn new() -> Result<AppState> {
         let title_font = Font::load(FONT_EXTRA_BOLD);
         let help_font = Font::load(FONT_MULI);
-
         let title_text = Asset::new(title_font.and_then(|font| {
             result(font.render(
                 STR_TITLE,
@@ -305,6 +316,7 @@ impl State for AppState {
 
         let eeg_view_state = EegViewState::new();
         let start_time = Instant::now();
+        println!("Start instant: {:?}", start_time);
 
         Ok(AppState {
             frame_count: 0,
