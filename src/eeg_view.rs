@@ -77,7 +77,7 @@ const SPIDER_SCALE: f32 = 150.0; // Make alpha etc larger for display purposes
 
 const IMAGE_SET_SIZE: usize = 10;
 struct ImageSet {
-    images: [Asset<Image>; IMAGE_SET_SIZE],
+    _images: [Asset<Image>; IMAGE_SET_SIZE],
 }
 
 fn filename(filename_prefix: &str, i: usize) -> String {
@@ -92,16 +92,16 @@ fn filename(filename_prefix: &str, i: usize) -> String {
 impl ImageSet {
     fn new(filename_prefix: &str) -> Self {
         let mut i: usize = 0;
-        let images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
+        let _images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
                 i = i + 1;
                 i - 1
             }))); 10];
 
-        Self { images }
+        Self { _images }
     }
 
-    fn draw(&mut self, image_number: usize, window: &mut Window) {
-        self.images[image_number]
+    fn _draw(&mut self, image_number: usize, window: &mut Window) {
+        self._images[image_number]
             .execute(|image| {
                 window.draw(
                     &image
@@ -121,10 +121,10 @@ pub struct EegViewState {
     clench_box: LabeledBox,
     graph_label_images: [Asset<Image>; N_EEG_CHANNELS],
     frequency_label_images: [Asset<Image>; N_EEG_DERIVED_VALUES],
-    calm_ext: ImageSet,
-    pos_neg: ImageSet,
-    valence_index: usize,
-    arousal_index: usize,
+    _calm_ext: ImageSet,
+    _pos_neg: ImageSet,
+    _valence_index: usize,
+    _arousal_index: usize,
 }
 
 impl EegViewState {
@@ -219,10 +219,10 @@ impl EegViewState {
             ),
             graph_label_images,
             frequency_label_images,
-            calm_ext: ImageSet::new("calm_ex"),
-            pos_neg: ImageSet::new("pos_neg"),
-            valence_index: 5,
-            arousal_index: 5,
+            _calm_ext: ImageSet::new("calm_ex"),
+            _pos_neg: ImageSet::new("pos_neg"),
+            _valence_index: 5,
+            _arousal_index: 5,
         }
     }
 }
@@ -262,41 +262,42 @@ fn draw_drowsiness_view(model: &MuseModel, window: &mut Window) {
 
 // TODO Add maximum slew rate to visualized value for mandala to change "smoothly"
 
-fn range_raw_values_to_0_to_9(val: f32) -> usize {
+fn _range_raw_values_to_0_to_9(val: f32) -> usize {
     ((val + 3.0) / 0.6).max(0.0).min(9.0) as usize
 }
 
-fn draw_mandala_view(model: &MuseModel, window: &mut Window, eeg_view_state: &mut EegViewState) {
-    match (
-        model.valence.moving_average(),
-        model.arousal.moving_average(),
-    ) {
-        (Some(val), Some(arou)) => {
-            // Shift raw values from -3.0 to 3.0 range into 0..9 (camped)
-            let vma = range_raw_values_to_0_to_9(val);
-            let ama = range_raw_values_to_0_to_9(arou);
+fn draw_mandala_view(_model: &MuseModel, _window: &mut Window, _eeg_view_state: &mut EegViewState) {
+    // match (
+    //     model.valence.moving_average(),
+    //     model.arousal.moving_average(),
+    // ) {
+    //     (Some(val), Some(arou)) => {
 
-            if vma > eeg_view_state.valence_index + 1 {
-                eeg_view_state.valence_index = (eeg_view_state.valence_index + 1).min(9);
-            } else if vma < eeg_view_state.valence_index - 1 {
-                eeg_view_state.valence_index = (eeg_view_state.valence_index - 1).max(0);
-            }
+    // // Shift raw values from -3.0 to 3.0 range into 0..9 (camped)
+    // let vma = range_raw_values_to_0_to_9(val);
+    // let ama = range_raw_values_to_0_to_9(arou);
 
-            if ama > eeg_view_state.arousal_index + 1 {
-                eeg_view_state.arousal_index = (eeg_view_state.arousal_index + 1).min(9);
-            } else if ama < eeg_view_state.valence_index - 1 {
-                eeg_view_state.arousal_index = (eeg_view_state.arousal_index - 1).max(0);
-            }
+    // if vma > eeg_view_state.valence_index + 1 {
+    //     eeg_view_state.valence_index = (eeg_view_state.valence_index + 1).min(9);
+    // } else if vma < eeg_view_state.valence_index - 1 {
+    //     eeg_view_state.valence_index = (eeg_view_state.valence_index - 1).max(0);
+    // }
 
-            eeg_view_state
-                .pos_neg
-                .draw(eeg_view_state.valence_index, window);
-            eeg_view_state
-                .calm_ext
-                .draw(eeg_view_state.arousal_index, window);
-        }
-        _ => draw_eeg_values_view(model, window, eeg_view_state), // Nothing to display- help the user setup
-    };
+    // if ama > eeg_view_state.arousal_index + 1 {
+    //     eeg_view_state.arousal_index = (eeg_view_state.arousal_index + 1).min(9);
+    // } else if ama < eeg_view_state.valence_index - 1 {
+    //     eeg_view_state.arousal_index = (eeg_view_state.arousal_index - 1).max(0);
+    // }
+    // // Draw from original image set
+    // eeg_view_state
+    //     .pos_neg
+    //     .draw(eeg_view_state.valence_index, window);
+    // eeg_view_state
+    //     .calm_ext
+    //     .draw(eeg_view_state.arousal_index, window);
+    // }
+    // _ => draw_eeg_values_view(model, window, eeg_view_state), // Nothing to display- help the user setup
+    // };
 }
 
 /// Put a circle on screen, manually scaled based on screen size and 'scale' factor, shifted from screen center by 'shift'
@@ -342,8 +343,6 @@ fn draw_eeg_values_view(
     eeg_view_state
         .clench_box
         .draw(muse_model.is_jaw_clench(), window);
-
-    // TODO Draw current arousal and valence values
 }
 
 /// Put five circles on screen in a pentagon shape, bouncing outward from the center based on EEG frequency band intensity
@@ -509,7 +508,7 @@ mod tests {
         let expected = 0;
         let val = -100.0;
 
-        assert_eq!(range_raw_values_to_0_to_9(val), expected);
+        assert_eq!(_range_raw_values_to_0_to_9(val), expected);
     }
 
     #[test]
@@ -517,7 +516,7 @@ mod tests {
         let expected = 9;
         let val = 100.0;
 
-        assert_eq!(range_raw_values_to_0_to_9(val), expected);
+        assert_eq!(_range_raw_values_to_0_to_9(val), expected);
     }
 
     #[test]
@@ -525,7 +524,7 @@ mod tests {
         let expected = 5;
         let val = 0.0;
 
-        assert_eq!(range_raw_values_to_0_to_9(val), expected);
+        assert_eq!(_range_raw_values_to_0_to_9(val), expected);
     }
 }
 

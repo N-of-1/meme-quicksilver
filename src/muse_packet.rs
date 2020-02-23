@@ -18,18 +18,13 @@ pub fn parse_muse_packet(addr: SocketAddr, packet: &Packet) -> Vec<MuseMessage> 
     let mut muse_messages = Vec::with_capacity(raw_messages.len());
 
     for raw_message in raw_messages {
-        let muse_message_type_option = parse_muse_message_type(raw_message);
-        match muse_message_type_option {
-            Some(muse_message_type) => {
-                let muse_message = MuseMessage {
-                    time,
-                    ip_address: addr,
-                    muse_message_type,
-                };
-                muse_messages.push(muse_message);
-            }
-            None => (),
-        };
+        if let Some(muse_message_type) = parse_muse_message_type(raw_message) {
+            muse_messages.push(MuseMessage {
+                time,
+                ip_address: addr,
+                muse_message_type,
+            });
+        }
     }
 
     muse_messages
@@ -171,12 +166,16 @@ pub fn parse_muse_message_type(raw_message: Message) -> Option<MuseMessageType> 
             d: get_float_from_args(3, &args),
         }),
 
-        "/muse/elements/alpha_absolute" => Some(MuseMessageType::Alpha {
-            a: get_float_from_args(0, &args),
-            b: get_float_from_args(1, &args),
-            c: get_float_from_args(2, &args),
-            d: get_float_from_args(3, &args),
-        }),
+        "/muse/elements/alpha_absolute" => {
+            let a = get_float_from_args(0, &args);
+            let b = get_float_from_args(1, &args);
+            let c = get_float_from_args(2, &args);
+            let d = get_float_from_args(3, &args);
+
+            // println!("Raw Alpha: [{:#?}, {:#?}, {:#?}, {:#?}]", a, b, c, d);
+
+            Some(MuseMessageType::Alpha { a, b, c, d })
+        }
 
         "/muse/elements/beta_absolute" => Some(MuseMessageType::Beta {
             a: get_float_from_args(0, &args),
