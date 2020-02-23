@@ -410,21 +410,25 @@ impl State for AppState {
             // println!("Time: {}", current_time);
             if let Some(normalized_valence) = normalized_valence_option {
                 println!("Normalized valence: {}", normalized_valence);
-                self.mandala_valence.start_transition(
-                    current_time,
-                    MANDALA_TRANSITION_DURATION,
-                    // bound_normalized_value(normalized_valence),
-                    normalized_valence,
-                );
+                if normalized_valence.is_finite() {
+                    self.mandala_valence.start_transition(
+                        current_time,
+                        MANDALA_TRANSITION_DURATION,
+                        // bound_normalized_value(normalized_valence),
+                        normalized_valence,
+                    );
+                }
             }
             if let Some(normalized_arousal) = normalized_arousal_option {
                 println!("Normalized arousal: {}", normalized_arousal);
-                self.mandala_arousal.start_transition(
-                    current_time,
-                    MANDALA_TRANSITION_DURATION,
-                    // bound_normalized_value(normalized_arousal),
-                    normalized_arousal,
-                );
+                if normalized_arousal.is_finite() {
+                    self.mandala_arousal.start_transition(
+                        current_time,
+                        MANDALA_TRANSITION_DURATION,
+                        // bound_normalized_value(normalized_arousal),
+                        normalized_arousal,
+                    );
+                }
             }
         }
         self.muse_model.count_down();

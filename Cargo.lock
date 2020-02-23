@@ -1369,7 +1369,7 @@ dependencies = [
 [[package]]
 name = "mandala-quicksilver"
 version = "0.1.0"
-source = "git+https://github.com/N-of-1/mandala-quicksilver.git?branch=mandala_transitions#a8aede9bec4dc38c55de857dc0b791cd03c63935"
+source = "git+https://github.com/N-of-1/mandala-quicksilver.git?branch=mandala_transitions#19efd166036a0965d9f1c933d4ebff3b7198bd96"
 dependencies = [
  "env_logger",
  "log",
