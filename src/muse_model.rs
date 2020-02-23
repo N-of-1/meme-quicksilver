@@ -345,31 +345,31 @@ impl MuseModel {
         let inner_receiver = inner_receiver::InnerMessageReceiver::new();
         let mut eeg_log_writer = crate::create_log_writer("eeg.csv");
         eeg_log_writer
-            .write_record(&["TP9", "AF7", "AF8", "TP10"])
+            .write_record(&["Time", "TP9", "AF7", "AF8", "TP10"])
             .expect("Can not write EEG");
         let mut alpha_log_writer = crate::create_log_writer("alpha.csv");
         alpha_log_writer
-            .write_record(&["Alpha TP9", "Alpha AF7", "Alpha AF8", "Alpha TP10"])
+            .write_record(&["Time", "Alpha TP9", "Alpha AF7", "Alpha AF8", "Alpha TP10"])
             .expect("Can not write alpha.csv header");
         let mut beta_log_writer = crate::create_log_writer("beta.csv");
         beta_log_writer
-            .write_record(&["Beta TP9", "Beta AF7", "Beta AF8", "Beta TP10"])
+            .write_record(&["Time", "Beta TP9", "Beta AF7", "Beta AF8", "Beta TP10"])
             .expect("Can not write beta.csv header");
         let mut gamma_log_writer = crate::create_log_writer("gamma.csv");
         gamma_log_writer
-            .write_record(&["Gamma TP9", "Gamma AF7", "Gamma AF8", "Gamma TP10"])
+            .write_record(&["Time", "Gamma TP9", "Gamma AF7", "Gamma AF8", "Gamma TP10"])
             .expect("Can not write gamma.csv header");
         let mut delta_log_writer = crate::create_log_writer("delta.csv");
         delta_log_writer
-            .write_record(&["Delta TP9", "Delta AF7", "Delta AF8", "Delta TP10"])
+            .write_record(&["Time", "Delta TP9", "Delta AF7", "Delta AF8", "Delta TP10"])
             .expect("Can not write delta.csv header");
         let mut theta_log_writer = crate::create_log_writer("theta.csv");
         theta_log_writer
-            .write_record(&["Theta TP9", "Theta AF7", "Theta AF8", "Theta TP10"])
+            .write_record(&["Time", "Theta TP9", "Theta AF7", "Theta AF8", "Theta TP10"])
             .expect("Can not write theta.csv header");
         let mut other_log_writer = crate::create_log_writer("other.csv");
         other_log_writer
-            .write_record(&["TIME", "RECORD"])
+            .write_record(&["Time", "Record"])
             .expect("Can not write other.csv header");
 
         (
@@ -403,6 +403,17 @@ impl MuseModel {
                 other_log_writer,
             },
         )
+    }
+
+    /// Write any pending activity to disk
+    pub fn flush_all(&mut self) {
+        let mut _r = self.alpha_log_writer.flush();
+        _r = self.beta_log_writer.flush();
+        _r = self.gamma_log_writer.flush();
+        _r = self.theta_log_writer.flush();
+        _r = self.delta_log_writer.flush();
+        _r = self.other_log_writer.flush();
+        _r = self.eeg_log_writer.flush();
     }
 
     fn log_alpha(&mut self, receive_time: Duration) {

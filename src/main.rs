@@ -246,7 +246,7 @@ fn bound_normalized_value(normalized: f32) -> f32 {
 /// Create a log of values and events collected during a session
 fn create_log_writer(filename: &str) -> Writer<File> {
     let writer: Writer<File> =
-        Writer::from_path("foo.csv").expect("Could not open CSV file for writing");
+        Writer::from_path(filename).expect("Could not open CSV file for writing");
 
     writer
 }
@@ -347,6 +347,7 @@ impl State for AppState {
                     .iter()
                     .any(|pad| pad[GamepadButton::FaceLeft].is_down())
             {
+                self.muse_model.flush_all();
                 window.close();
             }
         }
@@ -421,7 +422,7 @@ impl State for AppState {
             let current_time = self.seconds_since_start();
             // println!("Time: {}", current_time);
             if let Some(normalized_valence) = normalized_valence_option {
-                println!("Normalized valence: {}", normalized_valence);
+                // println!("Normalized valence: {}", normalized_valence);
                 if normalized_valence.is_finite() {
                     self.mandala_valence.start_transition(
                         current_time,
@@ -432,7 +433,7 @@ impl State for AppState {
                 }
             }
             if let Some(normalized_arousal) = normalized_arousal_option {
-                println!("Normalized arousal: {}", normalized_arousal);
+                // println!("Normalized arousal: {}", normalized_arousal);
                 if normalized_arousal.is_finite() {
                     self.mandala_arousal.start_transition(
                         current_time,

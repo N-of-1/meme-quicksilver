@@ -14,5 +14,5 @@
 # Postgresql databsae user and password info (kept locally only, see README)
 **/.env
 
-# Log files
-**/*.log
+# CSV value save files
+**/*.csv
