@@ -1,0 +1,2 @@
+# Update applications to the latest build
+cargo build --release

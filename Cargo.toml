@@ -11,14 +11,15 @@ log = "0.4"
 num-traits = "0.2"
 arr_macro = "0.1"
 svg = "0.6"
-#mandala-quicksilver = {git = "https://github.com/N-of-1/mandala-quicksilver.git", release="v0.4"}
-mandala-quicksilver = {git = "https://github.com/N-of-1/mandala-quicksilver.git", branch="mandala_transitions"}
+log4rs = "0.10"
 
 # Uncomment this block unless targeting ARM
 quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image_fix_and_add"}
+mandala-quicksilver = {git = "https://github.com/N-of-1/mandala-quicksilver.git", branch="mandala_transitions"}
 
 # Uncomment this block if targeting ARM
 #quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="arm_image_fix_and_add"}
+#mandala-quicksilver = {git = "https://github.com/N-of-1/mandala-quicksilver.git", branch="arm_mandala_transitions"}
 
 [profile.release]
 opt-level = 3

@@ -1,5 +1,7 @@
 /// Run a test where a Muse headset collects EEG data based on a series of
 /// images presented to the wearer. Push that raw collected data to a Postgresql database.
+#[macro_use]
+extern crate log;
 
 // Draw some multi-colored geometry to the screen
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
@@ -16,11 +18,9 @@ extern crate mandala_quicksilver;
 extern crate num_traits;
 extern crate quicksilver;
 
-#[macro_use]
-extern crate log;
-
 use arr_macro::arr;
 use eeg_view::EegViewState;
+use log::{error, info};
 use mandala_quicksilver::{Mandala, MandalaState};
 use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
@@ -36,7 +36,6 @@ use quicksilver::{
 };
 use std::sync::mpsc::Receiver;
 use std::time::{Duration, Instant};
-
 mod eeg_view;
 mod muse_model;
 
