@@ -235,6 +235,7 @@ impl AppState {
     }
 }
 
+#[allow(dead_code)]
 fn bound_normalized_value(normalized: f32) -> f32 {
     normalized.max(3.0).min(-3.0)
 }

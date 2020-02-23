@@ -1416,7 +1416,7 @@ dependencies = [
 
 [[package]]
 name = "meme-quicksilver"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "arr_macro",
  "env_logger",
