@@ -208,7 +208,7 @@ impl AppState {
         self.sound_click
             .execute(|sound| sound.play())
             .expect("Could not play left button sound");
-        self.sound_blah.execute(|sound| sound.play())
+        Ok(())
     }
 
     fn right_action(&mut self, _window: &mut Window) -> Result<()> {
@@ -453,6 +453,11 @@ impl State for AppState {
         };
         window.clear(background_color)?;
 
+        if self.frame_count == FRAME_INTRO {
+            // PLAY INTRO AUDIO AUTOMATICALLY WHEN THE TEXT APPEARS
+            let _result = self.sound_blah.execute(|sound| sound.play());
+        }
+
         if self.frame_count < FRAME_TITLE {
             self.draw_mandala(window);
 
@@ -489,13 +494,13 @@ impl State for AppState {
                 Ok(())
             })?;
 
-            // RIGHT BUTTON
-            let right_color = self.right_button_color;
-            self.sound_click.execute(|_| {
-                window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
-                Ok(())
-            })?;
-            self.right_button_color = COLOR_BUTTON;
+        // RIGHT BUTTON
+        // let right_color = self.right_button_color;
+        // self.sound_click.execute(|_| {
+        //     window.draw(&RECT_RIGHT_BUTTON, Col(right_color));
+        //     Ok(())
+        // })?;
+        // self.right_button_color = COLOR_BUTTON;
         } else if self.frame_count < FRAME_SETTLE {
             match self.muse_model.display_type {
                 DisplayType::Mandala => self.draw_mandala(window),
