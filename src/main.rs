@@ -35,7 +35,6 @@ use quicksilver::{
     sound::Sound,
     Future, Result,
 };
-use std::error::Error;
 use std::fs::File;
 use std::sync::mpsc::Receiver;
 use std::time::{Duration, Instant};

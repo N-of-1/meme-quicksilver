@@ -13,6 +13,7 @@ arr_macro = "0.1"
 svg = "0.6"
 log4rs = "0.10"
 csv = "1.1"
+diesel = "1.4"
 
 # Uncomment this block unless targeting ARM
 quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image_fix_and_add"}
